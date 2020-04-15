@@ -74,9 +74,9 @@ export namespace Day5 {
             execution.execution(codes, i, parameterOpCode);
             i += execution.steps;
         }
-        console.log(JSON.stringify(codes));
-        console.log(JSON.stringify(outputs));
-        return codes[0];
+        // console.log(JSON.stringify(codes));
+        // console.log(JSON.stringify(outputs));
+        return outputs[outputs.length - 1];
     }
 }
 
