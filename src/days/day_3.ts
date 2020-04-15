@@ -26,12 +26,11 @@ export namespace Day3 {
         if (!raster[currentX]) raster[currentX] = {};
         if (!raster[currentX][currentY]) raster[currentX][currentY] = {x: currentX, y: currentY, lines: {}};
         const currentCell = raster[currentX][currentY];
-        if (!currentCell.lines[lineKey]) {
-            // console.log('line', lineKey, steps)
-            currentCell.lines[lineKey] = steps;
-        }
         if (Object.keys(currentCell.lines).length > 0 && field.intersections.indexOf(currentCell) === -1) {
             field.intersections.push(currentCell);
+        }
+        if (!currentCell.lines[lineKey]) {
+            currentCell.lines[lineKey] = steps;
         }
     }
 
