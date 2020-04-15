@@ -2,6 +2,16 @@ export namespace Day1 {
     export function calculateRequiredFuel(mass: number): number {
         return Math.floor(mass / 3) - 2;
     }
+
+    export function calculateTotalRequiredFuel(mass: number): number {
+        let currentFuel = calculateRequiredFuel(mass);
+        let total = currentFuel;
+        while (currentFuel > 0) {
+            currentFuel = calculateRequiredFuel(currentFuel);
+            if (currentFuel > 0) total += currentFuel;
+        }
+        return total;
+    }
 }
 
 if (!module.parent) {
@@ -16,7 +26,7 @@ if (!module.parent) {
         let total = 0;
         for await (const line of rl) {
             if (!line) return;
-            total += Day1.calculateRequiredFuel(parseInt(line, 10));
+            total += Day1.calculateTotalRequiredFuel(parseInt(line, 10));
         }
         return total;
     }
