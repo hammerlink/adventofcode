@@ -17,20 +17,22 @@ export namespace Day5 {
         };
     }
 
+    export function getExecutionParameter(codes: number[], currentIndex: number,
+                                          opCode: ParameterOpCode, parameterIndex: number): number {
+        const codeParameterIndex = codes[currentIndex + parameterIndex + 1];
+        return opCode.parameterModes[parameterIndex] === 0 ? codes[codeParameterIndex] : codeParameterIndex;
+    }
+
     export function executeOpCode1(codes: number[], currentIndex: number, opCode: ParameterOpCode) {
-        const firstPartIndex = codes[currentIndex + 1];
-        const firstPart = opCode.parameterModes[0] === 0 ? codes[firstPartIndex] : firstPartIndex;
-        const secondPartIndex = codes[currentIndex + 2];
-        const secondPart = opCode.parameterModes[1] === 0 ? codes[secondPartIndex] : secondPartIndex;
-        codes[codes[currentIndex + 3]] = firstPart + secondPart;
+        const parameter1 = getExecutionParameter(codes, currentIndex, opCode, 0);
+        const parameter2 = getExecutionParameter(codes, currentIndex, opCode, 1);
+        codes[codes[currentIndex + 3]] = parameter1 + parameter2;
     }
 
     export function executeOpCode2(codes: number[], currentIndex: number, opCode: ParameterOpCode) {
-        const firstPartIndex = codes[currentIndex + 1];
-        const firstPart = opCode.parameterModes[0] === 0 ? codes[firstPartIndex] : firstPartIndex;
-        const secondPartIndex = codes[currentIndex + 2];
-        const secondPart = opCode.parameterModes[1] === 0 ? codes[secondPartIndex] : secondPartIndex;
-        codes[codes[currentIndex + 3]] = firstPart * secondPart;
+        const parameter1 = getExecutionParameter(codes, currentIndex, opCode, 0);
+        const parameter2 = getExecutionParameter(codes, currentIndex, opCode, 1);
+        codes[codes[currentIndex + 3]] = parameter1 * parameter2;
     }
 
     export function executeOpCode3(codes: number[], currentIndex: number, opCode: ParameterOpCode, input: number) {
@@ -38,12 +40,78 @@ export namespace Day5 {
     }
 
     export function executeOpCode4(codes: number[], currentIndex: number, opCode: ParameterOpCode): number {
-        const firstPartIndex = codes[currentIndex + 1];
-        return opCode.parameterModes[0] === 0 ? codes[firstPartIndex] : firstPartIndex;
+        return getExecutionParameter(codes, currentIndex, opCode, 0);
     }
 
-    export function executeGravityAssistProgram(codes: number[]): number {
+    export function executeTESTPart2Program(codes: number[]): number {
+        let i = 0;
         const outputs = [];
+        const executionCodes: {
+            [opCode: string]: {
+                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode,
+                            ...args: any[]) => any, steps: number
+            }
+        } = {
+            '1': {execution: executeOpCode1, steps: 4},
+            '2': {execution: executeOpCode2, steps: 4},
+            '3': {
+                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
+                    return executeOpCode3(codes, currentIndex, opCode, 5);
+                }, steps: 2
+            },
+            '4': {
+                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
+                    outputs.push(executeOpCode4(codes, currentIndex, opCode));
+                }, steps: 2
+            },
+            '5': {
+                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
+                    const parameter1 = getExecutionParameter(codes, currentIndex, opCode, 0);
+                    const parameter2 = getExecutionParameter(codes, currentIndex, opCode, 1);
+                    if (parameter1 !== 0) i = parameter2;
+                }, steps: 3
+            },
+            '6': {
+                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
+                    const parameter1 = getExecutionParameter(codes, currentIndex, opCode, 0);
+                    const parameter2 = getExecutionParameter(codes, currentIndex, opCode, 1);
+                    if (parameter1 === 0) i = parameter2;
+                }, steps: 3
+            },
+            '7': {
+                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
+                    const parameter1 = getExecutionParameter(codes, currentIndex, opCode, 0);
+                    const parameter2 = getExecutionParameter(codes, currentIndex, opCode, 1);
+                    codes[codes[currentIndex + 3]] = parameter1 < parameter2 ? 1 : 0;
+                }, steps: 4
+            },
+            '8': {
+                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
+                    const parameter1 = getExecutionParameter(codes, currentIndex, opCode, 0);
+                    const parameter2 = getExecutionParameter(codes, currentIndex, opCode, 1);
+                    codes[codes[currentIndex + 3]] = parameter1 === parameter2 ? 1 : 0;
+                }, steps: 4
+            },
+            '99': null,
+        };
+        while (i < codes.length) {
+            const currentExecution = codes[i];
+            const parameterOpCode = parseParameterOpCode(currentExecution);
+            const execution = executionCodes['' + parameterOpCode.opCode];
+            if (execution === undefined) throw new Error(`something went wrong, index: ${i} currentExecution: ${currentExecution}`);
+            if (execution === null) break;
+            const currentIndex = i;
+            execution.execution(codes, i, parameterOpCode);
+            if (i === currentIndex) i += execution.steps;
+        }
+        // console.log(JSON.stringify(codes));
+        // console.log(JSON.stringify(outputs));
+        return outputs[outputs.length - 1];
+    }
+
+    export function executeTESTProgram(codes: number[]): number {
+        const outputs = [];
+        let i = 0;
         const executionCodes: {
             [opCode: string]: {
                 execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode,
@@ -64,27 +132,21 @@ export namespace Day5 {
             },
             '99': null,
         };
-        let i = 0;
         while (i < codes.length) {
             const currentExecution = codes[i];
             const parameterOpCode = parseParameterOpCode(currentExecution);
             const execution = executionCodes['' + parameterOpCode.opCode];
             if (execution === undefined) throw new Error('something went wrong');
             if (execution === null) break;
+            const currentIndex = i;
             execution.execution(codes, i, parameterOpCode);
-            i += execution.steps;
+            if (i === currentIndex) i += execution.steps;
         }
-        // console.log(JSON.stringify(codes));
-        // console.log(JSON.stringify(outputs));
         return outputs[outputs.length - 1];
     }
 }
 
 if (!module.parent) {
-    // console.log(Day5.parseParameterOpCode(12345));
-    //
-    // console.log(Day5.executeGravityAssistProgram('1002,4,3,4,33'.split(',').map(x => parseInt(x, 10))));
-    // process.exit(0);
 
     const fs = require('fs');
     const path = require('path');
@@ -96,8 +158,9 @@ if (!module.parent) {
 
         for await (const line of rl) {
             if (!line) return;
-            const codes = line.split(',').map(x => parseInt(x, 10));
-            console.log(Day5.executeGravityAssistProgram(codes));
+            console.log(Day5.executeTESTProgram(line.split(',').map(x => parseInt(x, 10))));
+            console.log(Day5.executeTESTPart2Program(line.split(',').map(x => parseInt(x, 10))));
+            // 5577461
         }
     }
 
