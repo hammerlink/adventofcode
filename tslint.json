@@ -1,0 +1,41 @@
+{
+  "defaultSeverity": "error",
+  "extends": [
+    "tslint:recommended"
+  ],
+  "jsRules": {},
+  "rules": {
+    "quotemark": [
+      true,
+      "single"
+    ],
+    "no-var-requires": false,
+    "object-literal-sort-keys": false,
+    "trailing-comma": false,
+    "max-classes-per-file": [
+      false
+    ],
+    "no-namespace": false,
+    "no-bitwise": false,
+    "prefer-for-of": false,
+    "ordered-imports": false,
+    "forin": false,
+    "no-trailing-whitespace": false,
+    "variable-name": false,
+    "object-literal-shorthand": false,
+    "curly": false,
+    "arrow-parens": false,
+    "no-console": false,
+    "no-consecutive-blank-lines": false,
+    "object-literal-key-quotes": false,
+    "member-access": false,
+    "no-string-literal": false
+  },
+  "rulesDirectory": [],
+  "include": [
+    "apps/backend/src/**/*",
+    "apps/frontend/src/**/*",
+    "apps/core/**/*",
+    "apps/mobile-app/src/**/*"
+  ]
+}
