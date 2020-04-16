@@ -43,7 +43,7 @@ export namespace Day5 {
         return getExecutionParameter(codes, currentIndex, opCode, 0);
     }
 
-    export function executeTESTPart2Program(codes: number[]): number {
+    export function executeTESTPart2Program(codes: number[], input: number = 5): number {
         let i = 0;
         const outputs = [];
         const executionCodes: {
@@ -56,7 +56,7 @@ export namespace Day5 {
             '2': {execution: executeOpCode2, steps: 4},
             '3': {
                 execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
-                    return executeOpCode3(codes, currentIndex, opCode, 5);
+                    return executeOpCode3(codes, currentIndex, opCode, input);
                 }, steps: 2
             },
             '4': {
