@@ -1,3 +1,5 @@
+import {ProgramManager} from "../manager/program.manager";
+
 export namespace Day5 {
     export interface ParameterOpCode {
         opCode: number;
@@ -44,104 +46,26 @@ export namespace Day5 {
     }
 
     export function executeTESTPart2Program(codes: number[], input: number = 5): number {
-        let i = 0;
         const outputs = [];
-        const executionCodes: {
-            [opCode: string]: {
-                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode,
-                            ...args: any[]) => any, steps: number
-            }
-        } = {
-            '1': {execution: executeOpCode1, steps: 4},
-            '2': {execution: executeOpCode2, steps: 4},
-            '3': {
-                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
-                    return executeOpCode3(codes, currentIndex, opCode, input);
-                }, steps: 2
-            },
-            '4': {
-                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
-                    outputs.push(executeOpCode4(codes, currentIndex, opCode));
-                }, steps: 2
-            },
-            '5': {
-                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
-                    const parameter1 = getExecutionParameter(codes, currentIndex, opCode, 0);
-                    const parameter2 = getExecutionParameter(codes, currentIndex, opCode, 1);
-                    if (parameter1 !== 0) i = parameter2;
-                }, steps: 3
-            },
-            '6': {
-                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
-                    const parameter1 = getExecutionParameter(codes, currentIndex, opCode, 0);
-                    const parameter2 = getExecutionParameter(codes, currentIndex, opCode, 1);
-                    if (parameter1 === 0) i = parameter2;
-                }, steps: 3
-            },
-            '7': {
-                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
-                    const parameter1 = getExecutionParameter(codes, currentIndex, opCode, 0);
-                    const parameter2 = getExecutionParameter(codes, currentIndex, opCode, 1);
-                    codes[codes[currentIndex + 3]] = parameter1 < parameter2 ? 1 : 0;
-                }, steps: 4
-            },
-            '8': {
-                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
-                    const parameter1 = getExecutionParameter(codes, currentIndex, opCode, 0);
-                    const parameter2 = getExecutionParameter(codes, currentIndex, opCode, 1);
-                    codes[codes[currentIndex + 3]] = parameter1 === parameter2 ? 1 : 0;
-                }, steps: 4
-            },
-            '99': null,
-        };
-        while (i < codes.length) {
-            const currentExecution = codes[i];
-            const parameterOpCode = parseParameterOpCode(currentExecution);
-            const execution = executionCodes['' + parameterOpCode.opCode];
-            if (execution === undefined) throw new Error(`something went wrong, index: ${i} currentExecution: ${currentExecution}`);
-            if (execution === null) break;
-            const currentIndex = i;
-            execution.execution(codes, i, parameterOpCode);
-            if (i === currentIndex) i += execution.steps;
-        }
-        // console.log(JSON.stringify(codes));
-        // console.log(JSON.stringify(outputs));
+
+        const program = new ProgramManager();
+        program.intCodes = codes;
+        program.getInput = () => input;
+        program.writeOutput = (output) => outputs.push(output);
+        program.executeProgram();
+
         return outputs[outputs.length - 1];
     }
 
     export function executeTESTProgram(codes: number[]): number {
         const outputs = [];
-        let i = 0;
-        const executionCodes: {
-            [opCode: string]: {
-                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode,
-                            ...args: any[]) => any, steps: number
-            }
-        } = {
-            '1': {execution: executeOpCode1, steps: 4},
-            '2': {execution: executeOpCode2, steps: 4},
-            '3': {
-                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
-                    return executeOpCode3(codes, currentIndex, opCode, 1);
-                }, steps: 2
-            },
-            '4': {
-                execution: (codes: number[], currentIndex: number, opCode: ParameterOpCode) => {
-                    outputs.push(executeOpCode4(codes, currentIndex, opCode));
-                }, steps: 2
-            },
-            '99': null,
-        };
-        while (i < codes.length) {
-            const currentExecution = codes[i];
-            const parameterOpCode = parseParameterOpCode(currentExecution);
-            const execution = executionCodes['' + parameterOpCode.opCode];
-            if (execution === undefined) throw new Error('something went wrong');
-            if (execution === null) break;
-            const currentIndex = i;
-            execution.execution(codes, i, parameterOpCode);
-            if (i === currentIndex) i += execution.steps;
-        }
+
+        const program = new ProgramManager();
+        program.intCodes = codes;
+        program.getInput = () => 1;
+        program.writeOutput = (output) => outputs.push(output);
+        program.executeProgram();
+
         return outputs[outputs.length - 1];
     }
 }
