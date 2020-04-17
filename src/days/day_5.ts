@@ -45,26 +45,26 @@ export namespace Day5 {
         return getExecutionParameter(codes, currentIndex, opCode, 0);
     }
 
-    export function executeTESTPart2Program(codes: number[], input: number = 5): number {
+    export async function executeTESTPart2Program(codes: number[], input: number = 5): Promise<number> {
         const outputs = [];
 
         const program = new ProgramManager();
         program.intCodes = codes;
-        program.getInput = () => input;
+        program.getInput = async () => input;
         program.writeOutput = (output) => outputs.push(output);
-        program.executeProgram();
+        await program.executeProgram();
 
         return outputs[outputs.length - 1];
     }
 
-    export function executeTESTProgram(codes: number[]): number {
+    export async function executeTESTProgram(codes: number[]): Promise<number> {
         const outputs = [];
 
         const program = new ProgramManager();
         program.intCodes = codes;
-        program.getInput = () => 1;
+        program.getInput = async () => 1;
         program.writeOutput = (output) => outputs.push(output);
-        program.executeProgram();
+        await program.executeProgram();
 
         return outputs[outputs.length - 1];
     }
@@ -82,8 +82,8 @@ if (!module.parent) {
 
         for await (const line of rl) {
             if (!line) return;
-            console.log(Day5.executeTESTProgram(line.split(',').map(x => parseInt(x, 10))));
-            console.log(Day5.executeTESTPart2Program(line.split(',').map(x => parseInt(x, 10))));
+            console.log(await Day5.executeTESTProgram(line.split(',').map(x => parseInt(x, 10))));
+            console.log(await Day5.executeTESTPart2Program(line.split(',').map(x => parseInt(x, 10))));
             // 5577461
         }
     }
