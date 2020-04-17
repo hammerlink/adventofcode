@@ -22,6 +22,11 @@ if (!module.parent) {
             program.getInput = async () => 1;
             program.writeOutput = (output) => console.log('part 1', output);
             await program.executeProgram();
+            // part 2
+            const programPart2 = new ProgramManager(intCodes);
+            programPart2.getInput = async () => 2;
+            programPart2.writeOutput = (output) => console.log('part 2', output);
+            await programPart2.executeProgram();
         }
     }
 
