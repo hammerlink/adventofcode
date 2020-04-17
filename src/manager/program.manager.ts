@@ -1,10 +1,10 @@
 import {ParameterOpCode, ProgramEngine} from "../engine/program.engine";
-import getExecutionParameter = ProgramEngine.getExecutionParameter;
 import parseParameterOpCode = ProgramEngine.parseParameterOpCode;
 
 export class ProgramManager {
     intCodes: number[];
     currentIndex: number = 0;
+    currentRelativeBase: number = 0;
     executingFunction: (opCode: ParameterOpCode, ...args: any[]) => Promise<any>;
 
     intCodeFunctions: {
@@ -16,7 +16,8 @@ export class ProgramManager {
     loggingEnabled = false;
     logOpcode = (opCode: ParameterOpCode) => console.log(JSON.stringify(opCode));
 
-    constructor() {
+    constructor(intCodes?: number[]) {
+        if (intCodes) this.intCodes = JSON.parse(JSON.stringify(intCodes));
         this.intCodeFunctions['1'] = {execution: this.executeOpCode1, steps: 4};
         this.intCodeFunctions['2'] = {execution: this.executeOpCode2, steps: 4};
         this.intCodeFunctions['3'] = {execution: this.executeOpCode3, steps: 2};
@@ -25,6 +26,7 @@ export class ProgramManager {
         this.intCodeFunctions['6'] = {execution: this.executeOpCode6, steps: 3};
         this.intCodeFunctions['7'] = {execution: this.executeOpCode7, steps: 4};
         this.intCodeFunctions['8'] = {execution: this.executeOpCode8, steps: 4};
+        this.intCodeFunctions['9'] = {execution: this.executeOpCode9, steps: 2};
         this.intCodeFunctions['99'] = null;
     }
 
@@ -32,7 +34,7 @@ export class ProgramManager {
         if (!this.intCodes) throw new Error('no intcodes found');
         this.currentIndex = 0;
         while (this.currentIndex < this.intCodes.length) {
-            const currentExecution = this.intCodes[this.currentIndex];
+            const currentExecution = this.getIntCode(this.currentIndex);
             const parameterOpCode = parseParameterOpCode(currentExecution);
             const intCodeFunction = this.intCodeFunctions['' + parameterOpCode.opCode];
             if (intCodeFunction === undefined) throw new Error(`something went wrong, index: ${this.currentIndex} currentExecution: ${currentExecution}`);
@@ -46,49 +48,77 @@ export class ProgramManager {
         }
     }
 
+    private getIntCode(index: number): number {
+        if (this.intCodes[index] === undefined) this.intCodes[index] = 0;
+        return this.intCodes[index];
+    }
+
+    private writeIntCodeValue(opCode: ParameterOpCode, parameterIndex: number, value: number) {
+        const parameterMode = opCode.parameterModes[parameterIndex];
+        const parameterIntCode = this.getIntCode(this.currentIndex + parameterIndex + 1);
+        if (parameterMode === 0) {
+            this.intCodes[parameterIntCode] = value;
+        } else if (parameterMode === 2) {
+            this.intCodes[this.currentRelativeBase + parameterIntCode] = value;
+        }
+    }
+
+    private getIntCodeValueWithOpCode(opCode: ParameterOpCode, parameterIndex: number): number {
+        const parameterMode = opCode.parameterModes[parameterIndex];
+        const parameterIntCode = this.getIntCode(this.currentIndex + parameterIndex + 1);
+        if (parameterMode === 0) return this.getIntCode(parameterIntCode);
+        if (parameterMode === 1) return parameterIntCode;
+        if (parameterMode === 2) return this.getIntCode(this.currentRelativeBase + parameterIntCode);
+    }
+
     private async executeOpCode1(opCode: ParameterOpCode) {
-        const parameter1 = getExecutionParameter(this.intCodes, this.currentIndex, opCode, 0);
-        const parameter2 = getExecutionParameter(this.intCodes, this.currentIndex, opCode, 1);
-        this.intCodes[this.intCodes[this.currentIndex + 3]] = parameter1 + parameter2;
+        const parameter1 = this.getIntCodeValueWithOpCode(opCode, 0);
+        const parameter2 = this.getIntCodeValueWithOpCode(opCode, 1);
+        this.writeIntCodeValue(opCode, 2, parameter1 + parameter2);
     }
 
     private async executeOpCode2(opCode: ParameterOpCode) {
-        const parameter1 = getExecutionParameter(this.intCodes, this.currentIndex, opCode, 0);
-        const parameter2 = getExecutionParameter(this.intCodes, this.currentIndex, opCode, 1);
-        this.intCodes[this.intCodes[this.currentIndex + 3]] = parameter1 * parameter2;
+        const parameter1 = this.getIntCodeValueWithOpCode(opCode, 0);
+        const parameter2 = this.getIntCodeValueWithOpCode(opCode, 1);
+        this.writeIntCodeValue(opCode, 2, parameter1 * parameter2);
     }
 
     private async executeOpCode3(opCode: ParameterOpCode) {
         if (!this.getInput) throw new Error('no input function found');
-        this.intCodes[this.intCodes[this.currentIndex + 1]] = await this.getInput();
+        this.writeIntCodeValue(opCode, 0, await this.getInput());
     }
 
     private async executeOpCode4(opCode: ParameterOpCode) {
         if (!this.writeOutput) throw new Error('no output function found');
-        this.writeOutput(getExecutionParameter(this.intCodes, this.currentIndex, opCode, 0));
+        this.writeOutput(this.getIntCodeValueWithOpCode(opCode, 0));
     }
 
     private async executeOpCode5(opCode: ParameterOpCode) {
-        const parameter1 = getExecutionParameter(this.intCodes, this.currentIndex, opCode, 0);
-        const parameter2 = getExecutionParameter(this.intCodes, this.currentIndex, opCode, 1);
+        const parameter1 = this.getIntCodeValueWithOpCode(opCode, 0);
+        const parameter2 = this.getIntCodeValueWithOpCode(opCode, 1);
         if (parameter1 !== 0) this.currentIndex = parameter2;
     }
 
     private async executeOpCode6(opCode: ParameterOpCode) {
-        const parameter1 = getExecutionParameter(this.intCodes, this.currentIndex, opCode, 0);
-        const parameter2 = getExecutionParameter(this.intCodes, this.currentIndex, opCode, 1);
+        const parameter1 = this.getIntCodeValueWithOpCode(opCode, 0);
+        const parameter2 = this.getIntCodeValueWithOpCode(opCode, 1);
         if (parameter1 === 0) this.currentIndex = parameter2;
     }
 
     private async executeOpCode7(opCode: ParameterOpCode) {
-        const parameter1 = getExecutionParameter(this.intCodes, this.currentIndex, opCode, 0);
-        const parameter2 = getExecutionParameter(this.intCodes, this.currentIndex, opCode, 1);
-        this.intCodes[this.intCodes[this.currentIndex + 3]] = parameter1 < parameter2 ? 1 : 0;
+        const parameter1 = this.getIntCodeValueWithOpCode(opCode, 0);
+        const parameter2 = this.getIntCodeValueWithOpCode(opCode, 1);
+        this.writeIntCodeValue(opCode, 2, parameter1 < parameter2 ? 1 : 0);
     }
 
     private async executeOpCode8(opCode: ParameterOpCode) {
-        const parameter1 = getExecutionParameter(this.intCodes, this.currentIndex, opCode, 0);
-        const parameter2 = getExecutionParameter(this.intCodes, this.currentIndex, opCode, 1);
-        this.intCodes[this.intCodes[this.currentIndex + 3]] = parameter1 === parameter2 ? 1 : 0;
+        const parameter1 = this.getIntCodeValueWithOpCode(opCode, 0);
+        const parameter2 = this.getIntCodeValueWithOpCode(opCode, 1);
+        this.writeIntCodeValue(opCode, 2, parameter1 === parameter2 ? 1 : 0);
+    }
+
+    private async executeOpCode9(opCode: ParameterOpCode) {
+        const parameter1 = this.getIntCodeValueWithOpCode(opCode, 0);
+        this.currentRelativeBase += parameter1;
     }
 }
