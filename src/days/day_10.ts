@@ -46,17 +46,21 @@ export namespace Day10 {
         return output;
     }
 
-    export function findIdealObservationPost(elfMap: ElfMap): number {
+    export function findIdealObservationPost(elfMap: ElfMap): { visibleAsteroids: number, location: MapLocation } {
         let highestVisibleAsteroids = 0;
+        let mapLocation: MapLocation = null;
         for (let x = 0; x < elfMap.width; x++) {
             for (let y = 0; y < elfMap.height; y++) {
                 if (elfMap[x][y].isAsteroid) {
                     const visibleAsteroids = getVisibleAsteroidCount(elfMap, x, y);
-                    if (visibleAsteroids > highestVisibleAsteroids) highestVisibleAsteroids = visibleAsteroids;
+                    if (visibleAsteroids > highestVisibleAsteroids) {
+                        highestVisibleAsteroids = visibleAsteroids;
+                        mapLocation = elfMap[x][y];
+                    }
                 }
             }
         }
-        return highestVisibleAsteroids;
+        return {visibleAsteroids: highestVisibleAsteroids, location: mapLocation};
     }
 
     export function getVisibleAsteroidCount(elfMap: ElfMap, asteroidX: number, asteroidY: number): number {
@@ -107,6 +111,77 @@ export namespace Day10 {
         if (!b) return a;
         return greatestCommonDivisor(b, a % b);
     }
+
+    export function calculateAngleAndDistance(observationPoint: MapLocation, targetLocation: MapLocation): { angle: number, distance: number } {
+        // observation point is relative 0,0
+        const x = targetLocation.x - observationPoint.x;
+        const y = targetLocation.y - observationPoint.y;
+        const distance = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+        let angle: number = 0;
+        if (x > 0 && y >= 0) {
+            angle = y === 0 ? Math.PI / 2 : Math.atan(x / y);
+        } else if (x >= 0 && y < 0) {
+            angle = x === 0 ? Math.PI : Math.PI / 2 + Math.atan(Math.abs(y / x));
+        } else if (x < 0 && y <= 0) {
+            angle = y === 0 ? Math.PI * 3 / 2 : Math.PI + Math.atan(Math.abs(x / y));
+        } else if (x < 0 && y > 0) {
+            angle = Math.PI * 3 / 2 + Math.atan(Math.abs(y / x));
+        }
+        angle = parseFloat(angle.toFixed(6));
+        return {angle, distance};
+    }
+
+    export interface LaserTarget {angle: number; asteroids: Array<{distance: number, mapLocation: MapLocation}>}
+    export function prepareLaserTargets(elfMap: ElfMap, observationPoint: MapLocation): LaserTarget[] {
+        const output: LaserTarget[] = [];
+        const angleMap: {[angle: number]: LaserTarget} = {};
+        for (let x = 0; x < elfMap.width; x++) {
+            for (let y = 0; y < elfMap.height; y++) {
+                const targetLocation = elfMap[x][y]
+                if (targetLocation.isAsteroid && targetLocation !== observationPoint) {
+                    const metrics = calculateAngleAndDistance(observationPoint, targetLocation);
+                    if (!angleMap[metrics.angle]) angleMap[metrics.angle] = {angle: metrics.angle, asteroids: []};
+                    angleMap[metrics.angle].asteroids.push({distance: metrics.distance, mapLocation: targetLocation});
+                }
+            }
+        }
+        // sort on angle & distance
+        Object.keys(angleMap).sort(((a, b) => parseFloat(a) - parseFloat(b))).forEach(angleKey => {
+            const laserTarget: LaserTarget = angleMap[angleKey];
+            laserTarget.asteroids.sort(((a, b) => a.distance - b.distance));
+            output.push(laserTarget);
+        });
+        return output;
+    }
+
+    export function executeLaserOnMap(elfMap: ElfMap, shots: number): number {
+        const observationPoint = findIdealObservationPost(elfMap).location;
+        const laserTargets = prepareLaserTargets(elfMap, observationPoint);
+        let latestTarget: MapLocation;
+        let currentIndex = 0;
+        let currentShot = 0;
+        function increaseIndex() {
+            currentIndex++;
+            if (currentIndex > laserTargets.length - 1) currentIndex =  0;
+        }
+        while(currentShot < shots) {
+            let startIndex = currentIndex;
+            let hasStartedLoop = false;
+            let nextLaserTarget: {distance: number, mapLocation: MapLocation} = null;
+            while (nextLaserTarget === null && (currentIndex !== startIndex || !hasStartedLoop)) {
+                hasStartedLoop = true;
+                if (laserTargets[currentIndex].asteroids.length) {
+                    nextLaserTarget = laserTargets[currentIndex].asteroids.shift();
+                    nextLaserTarget.mapLocation.isAsteroid = false; // PEW PEW
+                    currentShot++;
+                    latestTarget = nextLaserTarget.mapLocation;
+                }
+                increaseIndex();
+            }
+        }
+
+        return latestTarget.x * 100 + (elfMap.height - 1 - latestTarget.y);
+    }
 }
 
 if (!module.parent) {
@@ -116,7 +191,9 @@ if (!module.parent) {
         const lines = await FileEngine.readFileToLines(path.join(path.dirname(__filename), '../data/day_10.input'));
         const map = Day10.parseElfMap(lines);
         console.log(Day10.findIdealObservationPost(map));
+
+        console.log('part 2', Day10.executeLaserOnMap(map, 200));
     }
 
-    main();
+    main().catch(err => console.error(err));
 }
