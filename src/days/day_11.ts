@@ -105,7 +105,7 @@ export namespace Day11 {
     export function printHullPainterShip(hullPainter: HullPainter) {
         for (let y = hullPainter.rangeY[1]; y >= hullPainter.rangeY[0]; y--) {
             let line = '';
-            for (let x = hullPainter.rangeX[0]; x < hullPainter.rangeX[1]; x++) {
+            for (let x = hullPainter.rangeX[0]; x <= hullPainter.rangeX[1]; x++) {
                 const panelColor = getCurrentColor(hullPainter, x, y);
                 line += ' ' + (panelColor === Color.BLACK ? '.' : 'O') + ' ';
             }
