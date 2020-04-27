@@ -18,6 +18,19 @@ describe('day 14', function () {
         });
 
         it('should calculate the least amount of ORE required for FUEL', function () {
+            const lines0 = [
+                '9 ORE => 2 A',
+                '8 ORE => 3 B',
+                '7 ORE => 5 C',
+                '3 A, 4 B => 1 AB',
+                '5 B, 7 C => 1 BC',
+                '4 C, 1 A => 1 CA',
+                '2 AB, 3 BC, 4 CA => 1 FUEL',
+            ];
+            const reactions0 = lines0.map(Day14.parseChemicalReaction);
+            expect(Day14.searchOptimalReactionCost('ORE', 'FUEL', 1, reactions0))
+                .equals(165);
+
             const lines = [
                 '157 ORE => 5 NZVS',
                 '165 ORE => 6 DCFZ',
@@ -30,7 +43,7 @@ describe('day 14', function () {
                 '3 DCFZ, 7 NZVS, 5 HKGWZ, 10 PSHF => 8 KHKGT',
             ];
             const reactions = lines.map(Day14.parseChemicalReaction);
-            expect(Day14.searchOptimalReactionCost('ORDE', 'FUEL', 1, reactions))
+            expect(Day14.searchOptimalReactionCost('ORE', 'FUEL', 1, reactions))
                 .equals(13312);
         });
     });
