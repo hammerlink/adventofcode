@@ -16,6 +16,8 @@ export class ProgramManager {
     loggingEnabled = false;
     logOpcode = (opCode: ParameterOpCode) => console.log(JSON.stringify(opCode));
 
+    externalTerminate = false;
+
     constructor(intCodes?: number[]) {
         if (intCodes) this.intCodes = JSON.parse(JSON.stringify(intCodes));
         this.intCodeFunctions['1'] = {execution: this.executeOpCode1, steps: 4};
@@ -34,6 +36,7 @@ export class ProgramManager {
         if (!this.intCodes) throw new Error('no intcodes found');
         this.currentIndex = 0;
         while (this.currentIndex < this.intCodes.length) {
+            if (this.externalTerminate === true) return;
             const currentExecution = this.getIntCode(this.currentIndex);
             const parameterOpCode = parseParameterOpCode(currentExecution);
             const intCodeFunction = this.intCodeFunctions['' + parameterOpCode.opCode];
