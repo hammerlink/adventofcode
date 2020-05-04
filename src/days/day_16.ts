@@ -1,4 +1,5 @@
 export namespace Day16 {
+    export const REPEAT_PATTERN = [0, 1, 0, -1];
     export function getRepeatingPatterns(repeatPattern: number[], size: number, position: number): number[] {
         const output: number[] = [];
         const requiredSize = size + 1;
@@ -26,19 +27,69 @@ export namespace Day16 {
         return output;
     }
 
-    export function executePhases(input: string, repeatPattern: number[], count: number): string {
+    export function executeOptimalPhases(input: number[], count: number, repeatPattern: number[] = REPEAT_PATTERN): number[] {
+        let output: number[] = input;
+        for (let c = 0; c < count; c++) {
+            console.log('phase', c);
+            let current: number[] = [];
+            for (let m = 0; m < output.length; m++) {
+                let total = 0;
+                const multiplier = m + 1;
+                const repeatMultipliedLength = repeatPattern.length * multiplier;
+                let currentIndex = multiplier - 1; // multiplier * 1 - 1
+                while (currentIndex < output.length) {
+                    // repeat index 1, 1
+                    let maxIndex = currentIndex + multiplier;
+                    if (maxIndex > output.length) maxIndex = output.length;
+                    for (let i = currentIndex; i < maxIndex; i++) {
+                        total += output[i];
+                    }
+                    // repeat index 3, -1
+                    maxIndex = currentIndex + multiplier * 3;
+                    if (maxIndex > output.length) maxIndex = output.length;
+                    for (let i = currentIndex + multiplier * 2; i < maxIndex; i++) {
+                        total -= output[i];
+                    }
+
+                    currentIndex += repeatMultipliedLength;
+                }
+                current.push(Math.abs(total % 10));
+            }
+            output = current;
+        }
+        return output;
+    }
+
+    export function executePhases(input: string, repeatPattern: number[], count: number, fullOutput: boolean = false): string {
         let current = input;
         for (let i = 0; i < 100; i++) {
             current = executePhase(current, repeatPattern);
         }
-        return current.slice(0, 8);
+        return !fullOutput ? current.slice(0, 8) : current;
     }
 
+    export function getRepeatValue(repeatPattern: number[], multiplier: number, index: number): number {
+        // const startIndex = index + 1;
+        // const moddedIndex = startIndex % (repeatPattern.length * (multiplier + 1));
+        // const repeatPatternIndex = Math.floor(moddedIndex / (multiplier + 1));
+        // return repeatPattern[repeatPatternIndex];
 
+        // single line for performance
+        return repeatPattern[Math.floor(((index + 1) % (repeatPattern.length * (multiplier + 1))) / (multiplier + 1))];
+    }
+
+    export function getRepeatIndex(repeatPatternLength: number, multiplier: number, index: number): number {
+        return Math.floor(((index + 1) % (repeatPatternLength * (multiplier + 1))) / (multiplier + 1));
+    }
 }
 
 if (!module.parent) {
     const input = '59773419794631560412886746550049210714854107066028081032096591759575145680294995770741204955183395640103527371801225795364363411455113236683168088750631442993123053909358252440339859092431844641600092736006758954422097244486920945182483159023820538645717611051770509314159895220529097322723261391627686997403783043710213655074108451646685558064317469095295303320622883691266307865809481566214524686422834824930414730886697237161697731339757655485312568793531202988525963494119232351266908405705634244498096660057021101738706453735025060225814133166491989584616948876879383198021336484629381888934600383957019607807995278899293254143523702000576897358';
-
-    console.log('part 1', Day16.executePhases(input, [0, 1, 0, -1], 100));
+    console.log(input.length);
+    const startDate = new Date().getTime();
+    const resultPhase = Day16.executeOptimalPhases(input.split('').map(x => parseInt(x, 10)), 100);
+    console.log('part 1', resultPhase.slice(0, 8).reduce((total, value) => total + value, ''));
+    console.log(new Date().getTime() - startDate, 'ms');
+    // let input2 = '';
+    // for (let i = 0; i < 1000; i++) input2 += input;
 }
