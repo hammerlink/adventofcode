@@ -55,16 +55,46 @@ describe('day 16', function () {
                 .equals(JSON.stringify('24176176'.split('').map(x => parseInt(x, 10))));
         });
 
-        it('should extract the real message', function () {
+        it('should be further optimized by printing the repeat matrix', function () {
+            Day16.printRepeatTable(8);
+            Day16.printRepeatTable(15);
+            console.log();
+            Day16.printRepeatTable(16);
+            console.log();
+            Day16.printRepeatTable(17);
+            console.log();
+            Day16.printRepeatTable(18);
+            console.log();
+            Day16.printRepeatTable(30);
+            // readable until half rounded up
+            // half until 1/3
+        });
+
+        it('should extract the fft offset message, example 1', function () {
+            this.timeout(10000);
             const rawInput = '03036732577212944063491565474664';
             const rawNInput = rawInput.split('').map(x => parseInt(x, 10));
-            let input = '';
-            for (let i = 0; i < 10000; i++) input += rawInput;
-            const offset: number = parseInt(input.slice(0, 7), 10);
-            const output = Day16.executeOptimalPhases(input.split('').map(x => parseInt(x, 10)), 5);
-            const rawOutput = output.reduce((total, value) => total + value, '');
-            let realOffset = offset % input.length;
-            // expect(message).equals('84462026');
+            const result = Day16.executeFFTWithOffset(rawNInput, 100, 10000);
+            const message = result.reduce((total, value) => total + value, '');
+            expect(message).equals('84462026');
+        });
+
+        it('should extract the fft offset message, example 2', function () {
+            this.timeout(10000);
+            const rawInput = '02935109699940807407585447034323';
+            const rawNInput = rawInput.split('').map(x => parseInt(x, 10));
+            const result = Day16.executeFFTWithOffset(rawNInput, 100, 10000);
+            const message = result.reduce((total, value) => total + value, '');
+            expect(message).equals('78725270');
+        });
+
+        it('should extract the fft offset message, example 3', function () {
+            this.timeout(10000);
+            const rawInput = '03081770884921959731165446850517';
+            const rawNInput = rawInput.split('').map(x => parseInt(x, 10));
+            const result = Day16.executeFFTWithOffset(rawNInput, 100, 10000);
+            const message = result.reduce((total, value) => total + value, '');
+            expect(message).equals('53553731');
         });
     });
 
