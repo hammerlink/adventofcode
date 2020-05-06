@@ -51,10 +51,19 @@ export namespace Day16 {
 
     export function executeOptimalPhases(input: number[], count: number, repeatPattern: number[] = REPEAT_PATTERN): number[] {
         let output: number[] = input;
+        let startDate = new Date();
         for (let c = 0; c < count; c++) {
-            console.log('phase', c);
+            // console.log('phase', c, startDate.getTime() - new Date().getTime());
+            startDate = new Date();
             let current: number[] = [];
-            for (let m = 0; m < output.length; m++) {
+            let halfRoundedDown = Math.floor(output.length / 2);
+            let lastBuildUp = 0;
+            for (let m = 0; m < halfRoundedDown; m++) {
+                // reverse
+                const rIndex = output.length - 1 - m;
+                lastBuildUp = (lastBuildUp + output[rIndex]) % 10;
+                current[rIndex] = Math.abs(lastBuildUp);
+                // normal
                 let total = 0;
                 const multiplier = m + 1;
                 const repeatMultipliedLength = repeatPattern.length * multiplier;
@@ -75,7 +84,12 @@ export namespace Day16 {
 
                     currentIndex += repeatMultipliedLength;
                 }
-                current.push(Math.abs(total % 10));
+                current[m] = (Math.abs(total % 10));
+            }
+            // if uneven add final
+            if (current.length % 2 === 1) {
+                lastBuildUp += output[halfRoundedDown];
+                current[halfRoundedDown] = Math.abs(lastBuildUp);
             }
             output = current;
         }
