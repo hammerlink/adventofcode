@@ -12,12 +12,27 @@ export namespace Day17 {
         isScaffold?: boolean;
     }
 
+    export interface VacuumBotInstructions {
+        routine: number[];
+        A: number[];
+        B: number[];
+        C: number[];
+    }
+
     export class AsciiBot extends ProgramManager {
         map: BasicMap<AsciiMapLocation> = MapEngine.newMap<AsciiMapLocation>();
         currentX = 0;
         currentY = 0;
 
+        commands: number[] = [];
+
         line = '';
+
+        getInput = async () => {
+            if (this.commands.length) {
+                return this.commands.shift();
+            }
+        }
 
         writeOutput = (output) => {
             if (output === 10) return this.writeLine();
@@ -36,6 +51,62 @@ export namespace Day17 {
             this.currentY++;
             this.currentX = 0;
         }
+    }
+
+    // find 3 movement functions of each 20 commands max, with which you can parcour through the entire map
+    // R,8,R,8,R,4,R,4,R,8,L,6,L,2,R,4,R,4,R,8,R,8,R,8,L,6,L,2
+    // determine all possible paths
+    // 1 solution is sufficient
+
+
+    export function splitPathCommandsIntoInstructions(commands: number[]): VacuumBotInstructions {
+        const COMMAND_LIMIT = 20;
+
+        interface IPattern {
+            count: number;
+            length: number;
+            indexes: number[],
+            commands: number[]
+        }
+
+        const patternRecurrenceCount: { [pattern: string]: IPattern } = {};
+
+        const addToPatternCache = (pattern: string, length: number, index: number, commands: number[]) => {
+            if (!patternRecurrenceCount[pattern]) patternRecurrenceCount[pattern] = {
+                count: 0,
+                length: length,
+                indexes: [],
+                commands
+            };
+            patternRecurrenceCount[pattern].indexes.push(index);
+            patternRecurrenceCount[pattern].count++;
+        };
+        for (let i = 0; i < commands.length; i++) {
+            let currentCommand = `${commands[i]}`;
+            let currentCommands = [commands[i]];
+            let count = 1;
+            addToPatternCache(currentCommand, count, i, currentCommands);
+            let maxLength = i + COMMAND_LIMIT;
+            if (maxLength > commands.length) maxLength = commands.length;
+            for (let j = i + 1; j < maxLength; j++) {
+                currentCommand += commands[j];
+                currentCommands.push(commands[j]);
+                count++;
+                addToPatternCache(currentCommand, count, i, currentCommands);
+            }
+        }
+        const startString = commands.reduce((t, v) => t + v, '');
+
+        function getPatterns(restString: string, usedPatterns: IPattern[]): IPattern[] {
+            for (const patternStr in patternRecurrenceCount) {
+
+            }
+            return;
+        }
+
+        // run through all possibilities OR search for all recurring patterns
+        // get matching parts
+        return null;
     }
 
     export function getSumOfAlignmentParameters(map: BasicMap<AsciiMapLocation>): number {
@@ -73,6 +144,10 @@ if (!module.parent) {
         const program = new Day17.AsciiBot(intCode);
         await program.executeProgram();
         console.log('part 1', Day17.getSumOfAlignmentParameters(program.map));
+
+        // calculate instructions to give
+        intCode[0] = 2;
+        const vacuumRobot = new ProgramManager(intCode);
     }
 
     main().catch(console.log);
