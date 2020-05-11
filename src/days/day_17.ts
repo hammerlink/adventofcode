@@ -98,15 +98,34 @@ export namespace Day17 {
         const startString = commands.reduce((t, v) => t + v, '');
 
         function getPatterns(restString: string, usedPatterns: IPattern[]): IPattern[] {
+            if (restString.length === 0) return usedPatterns;
+            if (usedPatterns.length === 3) return;
             for (const patternStr in patternRecurrenceCount) {
-
+                if (restString.indexOf(patternStr) > -1) {
+                    const remainingString = restString.replace(new RegExp(patternStr, 'g'), '');
+                    const patterns: IPattern[] = JSON.parse(JSON.stringify(usedPatterns));
+                    patterns.push(patternRecurrenceCount[patternStr]);
+                    const resultPatterns = getPatterns(remainingString, patterns);
+                    if (resultPatterns) return resultPatterns;
+                }
             }
             return;
         }
 
+        const usedPatterns = getPatterns(startString, []);
+
+
+        const vacuumBotInstructions: VacuumBotInstructions = {
+            routine: [],
+            A: usedPatterns[0].commands,
+            B: usedPatterns[1].commands,
+            C: usedPatterns[2].commands,
+        };
+
+        // determine routine
         // run through all possibilities OR search for all recurring patterns
         // get matching parts
-        return null;
+        return vacuumBotInstructions;
     }
 
     export function getSumOfAlignmentParameters(map: BasicMap<AsciiMapLocation>): number {

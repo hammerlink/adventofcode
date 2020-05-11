@@ -13,10 +13,10 @@ describe('day 17', function () {
             const A = 'R,8,R,8'.split(',').map(x => x.charCodeAt(0));
             const B = 'R,4,R,4,R,8'.split(',').map(x => x.charCodeAt(0));
             const C = 'L,6,L,2'.split(',').map(x => x.charCodeAt(0));
-            expect(JSON.stringify(instructions.routine)).equals(JSON.stringify(mainRoutine));
             expect(JSON.stringify(instructions.A)).equals(JSON.stringify(A));
             expect(JSON.stringify(instructions.B)).equals(JSON.stringify(B));
             expect(JSON.stringify(instructions.C)).equals(JSON.stringify(C));
+            expect(JSON.stringify(instructions.routine)).equals(JSON.stringify(mainRoutine));
         });
     });
 });
