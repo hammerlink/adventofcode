@@ -7,10 +7,22 @@ export namespace Day17 {
         CAMERA_LEFT = 60, CAMERA_RIGHT = 62, CAMERA_UP = 94, CAMERA_DOWN = 118, CAMERA_FALLING = 88
     }
 
+    export enum Direction {
+        UP, LEFT, DOWN, RIGHT
+    }
+
     export interface AsciiMapLocation {
         value: MapPointType;
         isScaffold?: boolean;
+        isStartPoint?: boolean;
+        isEndPoint?: boolean;
+        patterns?: {
+            [direction: string]: {}
+        };
+        mark?: string;
     }
+
+    export interface Sequence { sequence: string, patterns: string[] }
 
     export interface VacuumBotInstructions {
         routine: number[];
@@ -23,6 +35,8 @@ export namespace Day17 {
         map: BasicMap<AsciiMapLocation> = MapEngine.newMap<AsciiMapLocation>();
         currentX = 0;
         currentY = 0;
+
+        cameraPosition: MapLocation<AsciiMapLocation>;
 
         commands: number[] = [];
 
@@ -41,12 +55,19 @@ export namespace Day17 {
                 value: output,
                 isScaffold: output !== MapPointType.OPEN_SPACE && output !== MapPointType.CAMERA_FALLING
             };
+            if (isCamera(output)) {
+                this.cameraPosition = {
+                    value: location,
+                    x: this.currentX,
+                    y: this.currentY,
+                };
+            }
             MapEngine.setPointInMap(this.map, this.currentX, this.currentY, location);
             this.currentX++;
         };
 
         writeLine() {
-            console.log(this.line);
+            // console.log(this.line);
             this.line = '';
             this.currentY++;
             this.currentX = 0;
@@ -58,84 +79,23 @@ export namespace Day17 {
     // determine all possible paths
     // 1 solution is sufficient
 
-
-    export function splitPathCommandsIntoInstructions(commands: number[]): VacuumBotInstructions {
-        const COMMAND_LIMIT = 20;
-
-        interface IPattern {
-            count: number;
-            length: number;
-            indexes: number[],
-            commands: number[]
-        }
-
-        const patternRecurrenceCount: { [pattern: string]: IPattern } = {};
-
-        const addToPatternCache = (pattern: string, length: number, index: number, commands: number[]) => {
-            if (!patternRecurrenceCount[pattern]) patternRecurrenceCount[pattern] = {
-                count: 0,
-                length: length,
-                indexes: [],
-                commands
-            };
-            patternRecurrenceCount[pattern].indexes.push(index);
-            patternRecurrenceCount[pattern].count++;
-        };
-        for (let i = 0; i < commands.length; i++) {
-            let currentCommand = `${commands[i]}`;
-            let currentCommands = [commands[i]];
-            let count = 1;
-            addToPatternCache(currentCommand, count, i, currentCommands);
-            let maxLength = i + COMMAND_LIMIT;
-            if (maxLength > commands.length) maxLength = commands.length;
-            for (let j = i + 1; j < maxLength; j++) {
-                currentCommand += commands[j];
-                currentCommands.push(commands[j]);
-                count++;
-                addToPatternCache(currentCommand, count, i, currentCommands);
-            }
-        }
-        const startString = commands.reduce((t, v) => t + v, '');
-
-        function getPatterns(restString: string, usedPatterns: IPattern[]): IPattern[] {
-            if (restString.length === 0) return usedPatterns;
-            if (usedPatterns.length === 3) return;
-            for (const patternStr in patternRecurrenceCount) {
-                if (restString.indexOf(patternStr) > -1) {
-                    const remainingString = restString.replace(new RegExp(patternStr, 'g'), '');
-                    const patterns: IPattern[] = JSON.parse(JSON.stringify(usedPatterns));
-                    patterns.push(patternRecurrenceCount[patternStr]);
-                    const resultPatterns = getPatterns(remainingString, patterns);
-                    if (resultPatterns) return resultPatterns;
-                }
-            }
-            return;
-        }
-
-        const usedPatterns = getPatterns(startString, []);
-
-
-        const vacuumBotInstructions: VacuumBotInstructions = {
-            routine: [],
-            A: usedPatterns[0].commands,
-            B: usedPatterns[1].commands,
-            C: usedPatterns[2].commands,
-        };
-
-        // determine routine
-        // run through all possibilities OR search for all recurring patterns
-        // get matching parts
-        return vacuumBotInstructions;
+    export function isCamera(value: number): boolean {
+        return value === MapPointType.CAMERA_UP || value === MapPointType.CAMERA_RIGHT
+            || value === MapPointType.CAMERA_LEFT || value === MapPointType.CAMERA_DOWN;
     }
 
     export function getSumOfAlignmentParameters(map: BasicMap<AsciiMapLocation>): number {
         let output = 0;
+        let count = 0;
         // get all alignment parameters
         for (let x = map.minX; x <= map.maxX; x++) {
             for (let y = map.minY; y <= map.maxY; y++) {
                 const location = MapEngine.getPoint(map, x, y);
                 if (!location?.value.isScaffold) continue;
-                if (isIntersection(location, map)) output += calculateAlignmentParameter(location);
+                if (isIntersection(location, map)) {
+                    count++;
+                    output += calculateAlignmentParameter(location);
+                }
                 // check if it is a crossing
             }
         }
@@ -151,8 +111,307 @@ export namespace Day17 {
             && MapEngine.getPoint(map, x, y - 1)?.value.isScaffold;
     }
 
+    // this loads all start points on map, must be executed after getting the map
+    export function getBotStartPoints(map: BasicMap<AsciiMapLocation>): MapLocation<AsciiMapLocation>[] {
+        const points: MapLocation<AsciiMapLocation>[] = [];
+        for (let x = map.minX; x <= map.maxX; x++) {
+            for (let y = map.minY; y <= map.maxY; y++) {
+                const location = MapEngine.getPoint(map, x, y);
+                if (!location?.value.isScaffold) continue;
+                if (isStartPoint(location, map)) {
+                    points.push(location);
+                    location.value.isStartPoint = true;
+                }
+            }
+        }
+        return points;
+    }
+
+    export function isStartPoint(location: MapLocation<AsciiMapLocation>, map: BasicMap<AsciiMapLocation>): boolean {
+        const x = location.x;
+        const y = location.y;
+        let count = 0;
+
+        if (isCamera(location.value.value)) return true;
+
+        if (MapEngine.getPoint(map, x + 1, y)?.value.isScaffold
+            || MapEngine.getPoint(map, x - 1, y)?.value.isScaffold) count++;
+        if (MapEngine.getPoint(map, x, y + 1)?.value.isScaffold
+            || MapEngine.getPoint(map, x, y - 1)?.value.isScaffold) count++;
+
+        return count > 1;
+    }
+
+    export function getEndPoints(map: BasicMap<AsciiMapLocation>): MapLocation<AsciiMapLocation>[] {
+        const points: MapLocation<AsciiMapLocation>[] = [];
+        for (let x = map.minX; x <= map.maxX; x++) {
+            for (let y = map.minY; y <= map.maxY; y++) {
+                const location = MapEngine.getPoint(map, x, y);
+                if (!location?.value.isScaffold) continue;
+                if (isEndPoint(location, map)) {
+                    points.push(location);
+                    location.value.isEndPoint = true;
+                }
+            }
+        }
+        return points;
+    }
+
+    export function isEndPoint(location: MapLocation<AsciiMapLocation>, map: BasicMap<AsciiMapLocation>): boolean {
+        const x = location.x;
+        const y = location.y;
+        let count = 0;
+        if (MapEngine.getPoint(map, x + 1, y)?.value.isScaffold) count++;
+        if (MapEngine.getPoint(map, x - 1, y)?.value.isScaffold) count++;
+        if (MapEngine.getPoint(map, x, y + 1)?.value.isScaffold) count++;
+        if (MapEngine.getPoint(map, x, y - 1)?.value.isScaffold) count++;
+        return count === 1;
+    }
+
     export function calculateAlignmentParameter<T>(location: MapLocation<T>): number {
         return location.x * location.y;
+    }
+
+    export function validateSequence(sequence: Sequence, map: BasicMap<AsciiMapLocation>,
+                                     startLocation: MapLocation<AsciiMapLocation>, startDirection: Direction): boolean {
+        const inputMap: BasicMap<AsciiMapLocation> = JSON.parse(JSON.stringify(map));
+        let currentLocation = startLocation;
+        currentLocation.value.mark = 'A'; // start
+        let currentDirection = startDirection;
+        const patterns = sequence.sequence.split(',');
+        patterns.forEach(sequenceValue => {
+            const index = sequenceValue.charCodeAt(0) - 65;
+            const pattern = sequence.patterns[index];
+            const result = executePatternAndMark(currentLocation, inputMap, currentDirection, pattern, sequenceValue);
+            currentDirection = result.direction;
+            currentLocation = result.location;
+        });
+        console.log();
+        MapEngine.printMap(inputMap, (location) => {
+            if (location.value.mark) return location.value.mark;
+            return String.fromCharCode(location.value.value);
+        });
+        for (let x = map.minX; x <= map.maxX; x++) {
+            for (let y = map.minY; y <= map.maxY; y++) {
+                const location = MapEngine.getPoint(inputMap, x, y);
+                if (location.value.isScaffold && !location.value.mark &&
+                    (location.x !== startLocation.x && location.y !== startLocation.y)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    export function searchPatternSequence(location: MapLocation<AsciiMapLocation>, map: BasicMap<AsciiMapLocation>,
+                                          direction: Direction, sequence: string, patterns: string[],
+                                          endLocation: MapLocation<AsciiMapLocation>,
+                                          startLocation: MapLocation<AsciiMapLocation>, startDirection: Direction,
+                                          cache: string[] = [], count = 0): Sequence {
+        if (!location) return;
+        const id = `${location.x};${location.y};${direction}`;
+        if (cache.indexOf(id) > -1) return;
+        if (location === endLocation ) {
+            // check if all scaffolds are passed
+            if (sequence.length <= 20) {
+                if (validateSequence({sequence, patterns}, map, startLocation, startDirection))
+                    return {sequence, patterns};
+            }
+        }
+        if (location.y >= 19 && count < 125) return;
+        if (sequence.length >= 20) return;
+        if (!location.value.patterns) buildAllPatterns(location, map);
+        const possiblePatterns = location?.value?.patterns[direction];
+        const canUseNextPattern = patterns.length < 3;
+        for (const pattern in possiblePatterns) {
+            const patternIndex = patterns.indexOf(pattern); // 65
+            if (patternIndex > -1) {
+                const newLocation = executePattern(location, map, direction, pattern);
+                const result = searchPatternSequence(newLocation.location, map, newLocation.direction, addToPattern(sequence,
+                    String.fromCharCode(patternIndex + 65)), patterns, endLocation, startLocation, startDirection,
+                    [...cache, id], count + newLocation.count);
+                if (result) return result;
+            } else if (canUseNextPattern) {
+                const newPatterns = [...patterns, pattern];
+                const newLocation = executePattern(location, map, direction, pattern);
+                const result = searchPatternSequence(newLocation.location, map, newLocation.direction, addToPattern(sequence,
+                    String.fromCharCode(newPatterns.length - 1 + 65)), newPatterns, endLocation, startLocation, startDirection,
+                    [...cache, id], count + newLocation.count);
+                if (result) return result;
+            }
+        }
+        return;
+    }
+
+    export function executePattern(location: MapLocation<AsciiMapLocation>, map: BasicMap<AsciiMapLocation>,
+                                   direction: Direction, pattern: string): {location: MapLocation<AsciiMapLocation>,
+        direction: Direction, count: number} {
+        const commands = pattern.split(',');
+        let currentDirection = direction;
+        let currentLocation = location;
+        let count = 0;
+        commands.forEach(c => {
+            if (c === 'L') currentDirection = turnLeft(currentDirection);
+            else if (c === 'R') currentDirection = turnRight(currentDirection);
+            else {
+                const steps = parseInt(c, 10);
+                count += steps;
+                currentLocation = moveInDirection(currentLocation, map, currentDirection, steps);
+            }
+        })
+        return {location: currentLocation, direction: currentDirection, count};
+    }
+
+    export function markPatternAndPrint(map: BasicMap<AsciiMapLocation>, pattern: string, mark: string, print = false) {
+        const startPoints = getBotStartPoints(map);
+        startPoints.forEach(p => {
+            for (const direction in p.value.patterns) {
+                const patterns = p.value.patterns[direction];
+                if (patterns[pattern]) executePatternAndMark(p, map, parseInt(direction, 10), pattern, mark);
+            }
+        });
+        if (print) MapEngine.printMap(map, (location) => {
+            if (location.value.mark) return location.value.mark;
+            return String.fromCharCode(location.value.value);
+        });
+    }
+
+    export function executePatternAndMark(location: MapLocation<AsciiMapLocation>, map: BasicMap<AsciiMapLocation>,
+                                   direction: Direction, pattern: string, mark: string): {location: MapLocation<AsciiMapLocation>,
+        direction: Direction, count: number} {
+        const commands = pattern.split(',');
+        let currentDirection = direction;
+        let currentLocation = location;
+        let count = 0;
+        commands.forEach(c => {
+            if (c === 'L') currentDirection = turnLeft(currentDirection);
+            else if (c === 'R') currentDirection = turnRight(currentDirection);
+            else {
+                const steps = parseInt(c, 10);
+                count += steps;
+                for (let i = 0; i < steps; i++) {
+                    currentLocation = moveInDirection(currentLocation, map, currentDirection);
+                    currentLocation.value.mark = mark;
+                }
+            }
+        })
+        return {location: currentLocation, direction: currentDirection, count};
+    }
+
+    export function buildAllPatterns(location: MapLocation<AsciiMapLocation>, map: BasicMap<AsciiMapLocation>) {
+        const directions = [0,1,2,3];
+        directions.forEach(d => {
+            const patternCache: { [pattern: string]: boolean } = {};
+            buildPattern(location, map, '', d, patternCache);
+            if (!location.value.patterns) location.value.patterns = {};
+            location.value.patterns[d] = patternCache;
+        });
+    }
+
+    function addToPattern(pattern: string, newPiece: string): string {
+        return `${pattern}${pattern.length > 0 ? ',' : ''}${newPiece}`;
+    }
+
+    export function buildPattern(location: MapLocation<AsciiMapLocation>, map: BasicMap<AsciiMapLocation>, pattern: string,
+                                 direction: Direction, patternCache: { [pattern: string]: boolean }, lastType?: string,
+                                 cache: string[] = []) {
+        if (pattern.length >= 20) {
+            let output = pattern;
+            if (pattern.length > 20) { // strip last piece in case of larger
+                while (output.length > 20) output = output.substring(0, output.lastIndexOf(','));
+            }
+            patternCache[output] = true;
+            return;
+        } else if (pattern.length > 1) {
+            patternCache[pattern] = true;
+        }
+
+
+        const id = `${location.x};${location.y};${direction}`;
+        // if (cache.indexOf(id) > -1) return;
+        // try move
+        const currentMovementOptions = getMovementOptions(location, map, direction);
+        if (lastType !== 'm') currentMovementOptions
+            .forEach(x => buildPattern(
+                moveInDirection(location, map, direction, x),
+                map, addToPattern(pattern, `${x}`), direction, patternCache, 'm', cache));
+
+        const availableDirections = getAvailableDirections(location, map);
+        // try left
+        const leftDirection = turnLeft(direction);
+        if (lastType !== 'd' && availableDirections.indexOf(leftDirection) > -1)
+        // if (availableDirections.indexOf(leftDirection) > -1)
+            buildPattern(location, map, addToPattern(pattern, 'L'), leftDirection, patternCache, 'd', cache);
+        // try right
+        const rightDirection = turnRight(direction);
+        if (lastType !== 'd' && availableDirections.indexOf(rightDirection) > -1)
+        // if (availableDirections.indexOf(rightDirection) > -1)
+            buildPattern(location, map, addToPattern(pattern, 'R'), rightDirection, patternCache, 'd', cache);
+    }
+
+    export function getMovementOptions(location: MapLocation<AsciiMapLocation>, map: BasicMap<AsciiMapLocation>,
+                                       direction: Direction): number[] {
+        const distances: number[] = [];
+        let nextLocation = moveInDirection(location, map, direction, 1);
+        let currentSteps = 1;
+        while (nextLocation?.value?.isScaffold) {
+            if (nextLocation.value.isStartPoint || currentSteps % 2 === 0 ) distances.push(currentSteps);
+            nextLocation = moveInDirection(nextLocation, map, direction, 1);
+            currentSteps++;
+        }
+        return distances;
+    }
+
+    export function moveInDirection(location: MapLocation<AsciiMapLocation>, map: BasicMap<AsciiMapLocation>,
+                                    direction: Direction, steps = 1): MapLocation<AsciiMapLocation> {
+        // y 0 is top, n is bottom
+        if (direction === Direction.UP) return MapEngine.getPoint(map, location.x, location.y - steps);
+        if (direction === Direction.DOWN) return MapEngine.getPoint(map, location.x, location.y + steps);
+        if (direction === Direction.LEFT) return MapEngine.getPoint(map, location.x - steps, location.y);
+        if (direction === Direction.RIGHT) return MapEngine.getPoint(map, location.x + steps, location.y);
+        return location;
+    }
+
+    export function getEntryDirections(location: MapLocation<AsciiMapLocation>, map: BasicMap<AsciiMapLocation>): Direction[] {
+        const directions: Direction[] = [];
+        const directionMap: {} = {};
+        const addDirection = (d: Direction) => {
+            if (!directionMap[d]) {
+                directions.push(d);
+                directionMap[d] = true;
+            }
+        };
+        const value = location.value.value;
+        if (value === MapPointType.CAMERA_UP) addDirection(Direction.UP);
+        if (value === MapPointType.CAMERA_DOWN) addDirection(Direction.DOWN);
+        if (value === MapPointType.CAMERA_LEFT) addDirection(Direction.LEFT);
+        if (value === MapPointType.CAMERA_RIGHT) addDirection(Direction.RIGHT);
+
+        if (moveInDirection(location, map, Direction.UP, 1)?.value.isScaffold) addDirection(Direction.DOWN);
+        if (moveInDirection(location, map, Direction.DOWN, 1)?.value.isScaffold) addDirection(Direction.UP);
+        if (moveInDirection(location, map, Direction.LEFT, 1)?.value.isScaffold) addDirection(Direction.RIGHT);
+        if (moveInDirection(location, map, Direction.RIGHT, 1)?.value.isScaffold) addDirection(Direction.LEFT);
+        return directions;
+    }
+
+    export function getAvailableDirections(location: MapLocation<AsciiMapLocation>,
+                                           map: BasicMap<AsciiMapLocation>): Direction[] {
+        const directions: Direction[] = [];
+        if (moveInDirection(location, map, Direction.UP, 1)?.value.isScaffold) directions.push(Direction.UP);
+        if (moveInDirection(location, map, Direction.LEFT, 1)?.value.isScaffold) directions.push(Direction.LEFT);
+        if (moveInDirection(location, map, Direction.DOWN, 1)?.value.isScaffold) directions.push(Direction.DOWN);
+        if (moveInDirection(location, map, Direction.RIGHT, 1)?.value.isScaffold) directions.push(Direction.RIGHT);
+        return directions;
+    }
+
+    export function turnRight(direction: Direction): Direction {
+        if (direction === 0) return Direction.RIGHT;
+        return direction - 1;
+    }
+
+    export function turnLeft(direction: Direction): Direction {
+        if (direction === Direction.RIGHT) return Direction.UP;
+        return direction + 1;
     }
 }
 
@@ -164,9 +423,56 @@ if (!module.parent) {
         await program.executeProgram();
         console.log('part 1', Day17.getSumOfAlignmentParameters(program.map));
 
+
+        const startPoints = Day17.getBotStartPoints(program.map); // IMPORTANT TO GET ALL STARTPOINTS
+
+
+        MapEngine.printMap(program.map, (location) => {
+            if (location.value.isStartPoint) return 'O';
+            return String.fromCharCode(location.value.value);
+        });
+        const endPoints = Day17.getEndPoints(program.map); // IMPORTANT TO GET ALL STARTPOINTS
+        const startingPoint = endPoints[0] === program.cameraPosition ? endPoints[0] : endPoints[1];
+        const endingPoint = endPoints[0] === program.cameraPosition ? endPoints[1] : endPoints[0];
+        endingPoint.value.isStartPoint = true;
+
+        startPoints.forEach(point => Day17.buildAllPatterns(point, program.map));
+
+        // build all patterns in each point until max, and count
+        const solution = Day17.searchPatternSequence(startingPoint, program.map, Day17.Direction.UP, '',
+            [], endingPoint, startingPoint, Day17.Direction.UP);
+        console.log(solution);
+
+        // {
+        //   "sequence": "A,B,A,C,B,A,C,B,A,C",
+        //   "patterns": [
+        //     "L,6,L,4,R,12",
+        //     "L,6,R,12,R,12,L,8",
+        //     "L,6,L,10,L,10,L,6"
+        //   ]
+        // }
+
         // calculate instructions to give
         intCode[0] = 2;
         const vacuumRobot = new ProgramManager(intCode);
+        let inputIndex = 0;
+        const result = `${solution.sequence}${String.fromCharCode(10)}${solution.patterns[0]}${String.fromCharCode(10)}`
+         + `${solution.patterns[1]}${String.fromCharCode(10)}${solution.patterns[2]}${String.fromCharCode(10)}`
+        + `n${String.fromCharCode(10)}`;
+        vacuumRobot.getInput = async () => {
+            const value = result.charCodeAt(inputIndex);
+            inputIndex++;
+            console.log('input', value, String.fromCharCode(value))
+
+            if (isNaN(value)) process.exit(0);
+            return value;
+        };
+        vacuumRobot.writeOutput = output => {
+            console.log('output', output);
+            if (isNaN(output)) process.exit(0);
+        };
+        await vacuumRobot.executeProgram();
+
     }
 
     main().catch(console.log);

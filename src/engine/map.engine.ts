@@ -40,4 +40,12 @@ export namespace MapEngine {
         if (!map[x][y]) return null;
         return map[x][y];
     }
+
+    export function printMap<T>(map: BasicMap<T>, getValue: (location: MapLocation<T>) => string) {
+        for (let y = map.minY; y <= map.maxY; y++) {
+            let line = '';
+            for (let x = map.minX; x <= map.maxX; x++) line += `${getValue(map[x][y])} `;
+            console.log(line);
+        }
+    }
 }
