@@ -191,8 +191,67 @@ export namespace Day18 {
         return targets;
     }
 
+    export function gatherKeysASAPMulti(topologies: AdvancedTopology[], keyCounts: number[],
+                                        steps: number = 0, routes: string[], keys = '',
+                                        cache: {best: number, route: string} = {best: null, route: null}): number {
 
-    // todo cache required keys & steps on the current point
+        if (cache.best && steps >= cache.best) return cache.best;
+        const availableRoutes: Array<{ steps: number, route: string, index: number, target: string }> = [];
+        let done = true;
+        for (let i = 0; i < topologies.length; i++) {
+            const route = routes[i];
+            const keyCount: number = keyCounts[i];
+            const topology: AdvancedTopology = topologies[i];
+            if (route.length === keyCount + 1) continue; // only running on keys, the +1 comes from the @
+            done = false;
+
+            const currentKey = route[route.length - 1];
+            const currentPoint = topology[currentKey];
+            // if (!currentPoint.fastCache) currentPoint.fastCache = {};
+            // const cacheKey = route.split('').sort().join('');
+            // if current keys or more keys was faster then stop
+            // if (currentPoint.fastCache[cacheKey] && currentPoint.fastCache[cacheKey] <= steps) return null; // fixme rethink caching mechanism
+            // currentPoint.fastCache[cacheKey] = steps;
+
+            for (const target in currentPoint.targets) {
+                if (!isKey(target) || route.includes(target)) continue; // the route includes might be an issue,
+                // there might be another route possible via another key thats faster
+                const currentPointTarget = currentPoint.targets[target];
+                if (currentPointTarget.direct) {
+                    availableRoutes.push({steps: steps + currentPointTarget.steps, route: `${route}${target}`,
+                        index: i, target});
+                }
+                if (currentPointTarget.routes) {
+                    currentPointTarget.routes.forEach(routeObject => {
+                        const keyCompare = compareKeyIds(keys, routeObject.keysID);
+                        if (keyCompare.missingKeys.length) return;
+                        const addedRoute = routeObject.route.split('').filter(x => isKey(x) && !route.includes(x)).join('');
+                        availableRoutes.push({steps: steps + routeObject.steps, route: `${route}${addedRoute}`,
+                            index: i, target});
+                    });
+                }
+            }
+        }
+
+        if (done) return steps;
+
+        availableRoutes.sort(((a, b) => a.steps - b.steps));
+        // routes.sort(((a, b) => a.route.length - b.route.length));
+        for (let i = 0; i < availableRoutes.length; i++) {
+            const routeObject = availableRoutes[i];
+            const newRoutes = [...routes];
+            newRoutes[routeObject.index] = routeObject.route;
+            const result = gatherKeysASAPMulti(topologies, keyCounts, routeObject.steps, newRoutes,
+                `${keys}${routeObject.target}`, cache);
+            if (result !== null && (cache.best === null || result < cache.best)) {
+                cache.best = result;
+                cache.route = routeObject.route;
+                console.log(cache);
+            }
+        }
+        return cache.best;
+    }
+
     export function gatherAllKeysAsFastAsPossible(topology: AdvancedTopology, keyCount: number,
                                   steps: number = 0, route: string = '@',
                                   cache: {best: number, route: string} = {best: null, route: null}): number {
@@ -282,12 +341,12 @@ export namespace Day18 {
         steps: number;
     }
 
-    export function buildAdvancedTopology(vaultTopology: VaultTopology): AdvancedTopology {
+    export function buildAdvancedTopology(vaultTopology: VaultTopology, topology: AdvancedTopology = {}): AdvancedTopology {
         const start = new Date();
-        const topology: AdvancedTopology = {};
         const allTargets = Object.keys(vaultTopology);
         const points: Array<{id: string, connectionCount: number}> = [];
         allTargets.forEach(id => {
+            if (!vaultTopology[id]) return;
             points.push({id, connectionCount: Object.keys(vaultTopology[id]).length});
             // add point to advanced topology, with all direct links
             topology[id] = {directLinks: {}, targets: {}};
@@ -424,116 +483,30 @@ if (!module.parent) {
 
     async function main() {
         const lines = await FileEngine.readFileToLines(path.join(path.dirname(__filename), '../data/day_18.input'));
-        const buildResult = Day18.buildMap(lines);
-        // MapEngine.printMap(buildResult.map, (v) => String.fromCharCode(v.value.charCode));
-
-        const topology = Day18.buildVaultTopology(buildResult.map, buildResult.doorPairs, buildResult.entryPoint);
-        const advancedTopology = Day18.buildAdvancedTopology(topology);
-
-        // print alternative routes per key
-        const startingPoint = advancedTopology['@'];
-        const requiredKeysMap: {[key: string]: string} = {};
-        for (const target in startingPoint.targets) {
-            if (!Day18.isKey(target)) continue;
-            const targetPoint = startingPoint.targets[target];
-            let count = 0;
-            if (targetPoint.direct) {
-                count++;
-                // console.log(target, 'direct', targetPoint.steps);
-                requiredKeysMap[target] = '';
-            }
-            if (targetPoint.routes) {
-                count += targetPoint.routes.length;
-                targetPoint.routes.forEach(r => {
-                    const keys = r.route.split('').filter(x => Day18.isDoor(x)).sort().join('').toLowerCase();
-                    // console.log(target, r.route, r.steps, keys);
-                    requiredKeysMap[target] = keys;
-                });
-            }
-
-            // console.log(target, count);
-        }
-        console.log(JSON.stringify(requiredKeysMap, null, 4));
-        function getRequiredKeys(key: string): string {
-            let keys = '';
-            const requiredKeys = requiredKeysMap[key];
-            for (let i = 0; i < requiredKeys.length; i++) {
-                const requiredKey = requiredKeys[i];
-                if (!keys.includes(requiredKey)) keys += requiredKey;
-                const subRequiredKeys = getRequiredKeys(requiredKey);
-                subRequiredKeys.split('').forEach(subKey => {
-                    if (!keys.includes(subKey)) keys += subKey;
-                });
-            }
-            return keys.split('').sort().join('');
-        }
-        const keyList: Array<{key: string, requiredKeys: string}> = [];
-        for (const key in requiredKeysMap) {
-            requiredKeysMap[key] = getRequiredKeys(key);
-            keyList.push({key, requiredKeys: requiredKeysMap[key]})
-        }
-        keyList.sort((a, b) => a.requiredKeys.length - b.requiredKeys.length);
-        console.log(keyList);
-        // console.log(JSON.stringify(keyList, null, 4));
-        // find the endpoints
-        const endPoints = [];
-        for (const key in requiredKeysMap) {
-            let isEndPoint = true;
-            for (const k in requiredKeysMap) {
-                if (requiredKeysMap[k].includes(key)) {
-                    isEndPoint = false;
-                    break;
-                }
-            }
-            if (isEndPoint) endPoints.push(key);
-        }
-        console.log(endPoints);
-        keyList.forEach(keyObject => {
-            if (endPoints.indexOf(keyObject.key) > -1) console.log(keyObject);
+        // const result = Day18.solveMap(lines);
+        // console.log(result);
+        const lines_part_2_1 = await FileEngine.readFileToLines(path.join(path.dirname(__filename), '../data/day_18_2_1.input'));
+        const lines_part_2_2 = await FileEngine.readFileToLines(path.join(path.dirname(__filename), '../data/day_18_2_2.input'));
+        const lines_part_2_3 = await FileEngine.readFileToLines(path.join(path.dirname(__filename), '../data/day_18_2_3.input'));
+        const lines_part_2_4 = await FileEngine.readFileToLines(path.join(path.dirname(__filename), '../data/day_18_2_4.input'));
+        const maps = [
+            Day18.buildMap(lines_part_2_1),
+            Day18.buildMap(lines_part_2_2),
+            Day18.buildMap(lines_part_2_3),
+            Day18.buildMap(lines_part_2_4),
+        ];
+        const topologies = maps.map(mapResult => {
+            const basicTopology = Day18.buildVaultTopology(mapResult.map, mapResult.doorPairs, mapResult.entryPoint);
+            return Day18.buildAdvancedTopology(basicTopology);
+        });
+        const keyCounts = topologies.map(topology => {
+            let counter = 0;
+            for (const value in topology) if (Day18.isKey(value)) counter++;
+            return counter;
         });
 
-        function getRoutes(from: string, target: string): Array<{route: string, steps: number, keysID: string}> {
-            let routes: Array<{route: string, steps: number, keysID: string}>= [];
-            const fromPoint = advancedTopology[from];
-            const targetPoint = fromPoint.targets[target];
-            if (targetPoint.direct) routes.push({route: `${from}${target}`, steps: targetPoint.steps, keysID: ''});
-            if (targetPoint.routes) routes = routes.concat(targetPoint.routes);
-            routes.sort((a, b) => a.steps - b.steps);
-            return routes;
-        }
-
-        const keyGroups = [
-            'dt',
-            'sbl',
-            'c',
-            'nu',
-            'vo',
-            'p',
-            'k',
-            'f',
-            'a',
-            'i',
-            'z',
-        ];
-        const fixedPath = 'slbcnuovpkfaiz';
-        let steps = 0;
-        let route = '';
-        for (let i = 1; i < fixedPath.length; i++) {
-            const previous = fixedPath[i-1];
-            const current = fixedPath[i];
-            const routes = getRoutes(previous, current);
-            const routeObject = routes[0];
-            steps += routeObject.steps;
-            route += routeObject.route.substr(1);
-            route = route.split('').filter(x => Day18.isKey(x)).join('');
-            console.log(steps, route, previous, current, routeObject, routes.length);
-        }
-
-
-
-        const result = Day18.solveMap(lines);
+        const result = Day18.gatherKeysASAPMulti(topologies, keyCounts, 0, topologies.map(_ => '@'));
         console.log(result);
-        const x = 0;
 
         // 4412 first result, incorrect
         // 4280 second result, incorrect, too high
