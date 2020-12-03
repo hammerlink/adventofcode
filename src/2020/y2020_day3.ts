@@ -5,6 +5,7 @@ export namespace Y2020_Day3 {
     export interface TobogganPoint {
         tree: boolean;
     }
+
     // add map to the right again
 
     export function repeatMap(map: BasicMap<Y2020_Day3.TobogganPoint>, mapPattern: BasicMap<Y2020_Day3.TobogganPoint>) {
@@ -36,6 +37,18 @@ export namespace Y2020_Day3 {
         }
         return treeCount;
     }
+
+    export function simpleStepDownSlope(lines: string[], stepX: number, stepY: number): number {
+        let treeCount = 0;
+        const defaultLength = lines[0].length;
+        let x = 0;
+        for (let i = 0; i < lines.length; i = i + stepY) {
+            const parsedX = x % defaultLength;
+            if (lines[i][parsedX] === '#') treeCount++;
+            x += stepX;
+        }
+        return treeCount;
+    }
 }
 
 if (!module.parent) {
@@ -51,6 +64,7 @@ if (!module.parent) {
             }
         }
         console.log(Y2020_Day3.stepDownSlope(originalMap, 3, 1));
+        console.log(Y2020_Day3.simpleStepDownSlope(lines, 3, 1));
 
         console.log([
             Y2020_Day3.stepDownSlope(originalMap, 1, 1),
@@ -59,6 +73,11 @@ if (!module.parent) {
             Y2020_Day3.stepDownSlope(originalMap, 7, 1),
             Y2020_Day3.stepDownSlope(originalMap, 1, 2),
         ].reduce((total, value) => total * value));
+
+        const part2Result = [[1, 1], [3, 1], [5, 1], [7, 1], [1, 2]]
+            .map(v => Y2020_Day3.simpleStepDownSlope(lines, v[0], v[1]))
+            .reduce((t, v) => t * v);
+        console.log(part2Result)
     }
 
     main().catch(err => console.error(err));
