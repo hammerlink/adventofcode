@@ -25,7 +25,7 @@ export namespace MapEngine {
         };
     }
 
-    export function setPointInMap<T>(map: BasicMap<T>, x: number, y: number, value: T) {
+    export function setPointInMap<T>(map: BasicMap<T>, x: number, y: number, value: T): MapLocation<T> {
         if (!map[x]) map[x] = {};
         if (!map[x][y]) map[x][y] = {x, y, value: null};
         map[x][y].value = value;
@@ -33,6 +33,7 @@ export namespace MapEngine {
         if (map.maxX === null || x > map.maxX) map.maxX = x;
         if (map.minY === null || y < map.minY) map.minY = y;
         if (map.maxY === null || y > map.maxY) map.maxY = y;
+        return map[x][y];
     }
 
     export function getPoint<T>(map: BasicMap<T>, x: number, y: number): MapLocation<T> | null {
@@ -41,11 +42,18 @@ export namespace MapEngine {
         return map[x][y];
     }
 
-    export function printMap<T>(map: BasicMap<T>, getValue: (location: MapLocation<T>) => string) {
+    export function printMap<T>(map: BasicMap<T>, getValue: (location: MapLocation<T>) => string, printIndex = false) {
+        const maxLength = `${map.maxY}`.length;
         for (let y = map.minY; y <= map.maxY; y++) {
-            let line = '';
+            let line = `${printIndex ? getPrintIndex(y, maxLength): ''}`;
             for (let x = map.minX; x <= map.maxX; x++) line += `${getValue(map[x][y])} `;
             console.log(line);
         }
+    }
+
+    export function getPrintIndex(y: number, maxLength: number): string {
+        let index = `${y}`;
+        while (index.length < maxLength) index += ' ';
+        return index;
     }
 }

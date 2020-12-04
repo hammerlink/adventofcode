@@ -4,13 +4,13 @@ const readline = require('readline');
 
 export namespace FileEngine {
 
-    export async function readFileToLines(filePath: string): Promise<string[]> {
+    export async function readFileToLines(filePath: string, ignoreEmpty = true): Promise<string[]> {
         const fileStream = fs.createReadStream(filePath);
         const rl = readline.createInterface({input: fileStream, crlfDelay: Infinity});
 
         const lines: string[] = [];
         for await (const line of rl) {
-            if (!line) return;
+            if (ignoreEmpty && !line) return;
             lines.push(line);
         }
         return lines;
