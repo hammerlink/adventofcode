@@ -1,4 +1,6 @@
 import {FileEngine} from '../engine/file.engine';
+import { expect } from 'chai';
+import * as assert from 'assert';
 
 export namespace Y2020_Day7 {
     export interface Bag {
@@ -16,7 +18,7 @@ export namespace Y2020_Day7 {
         };
     }
 
-    export const bagTree: { [color: string]: Bag } = {};
+    export let bagTree: { [color: string]: Bag } = {};
 
     export function createRawBag(color: string): Bag {
         if (bagTree[color]) return bagTree[color];
@@ -29,28 +31,19 @@ export namespace Y2020_Day7 {
     }
 
     export function parseBag(line: string) {
-        const bagParts = line.split(' bags contain ');
-        if (bagParts.length !== 2) throw new Error(`invalid bag line? ${line}`);
-        const lineColor = bagParts[0].replace(' bags', '');
-        const bag: Bag = createRawBag(lineColor);
-        if (bag.color === 'mirrored bronze bags') {
-            const x = null;
-        }
-        const containsLine = bagParts[1];
-        const containsBags = containsLine.replace('.', '').split(', ');
-        if (containsBags.indexOf('no other bags') > -1) return;
-        containsBags.forEach(containBag => {
-            const firstSpace = containBag.indexOf(' ');
-            const amount = parseInt(containBag.substr(0, firstSpace));
-            const color = containBag.substr(firstSpace + 1).replace(/\sbags?/, '');
+        const bag: Bag = createRawBag(line.match(/^([a-z]+\s[a-z]+) bags contain/)[1]);
+
+        const rawBagRules = line.match(/(\d+ [a-z]+ [a-z]+ bags?)/g);
+        if (!rawBagRules || rawBagRules.length === 0) return;
+        const bagRules: { amount: number; color: string }[] = (rawBagRules as string[])
+            .map((bagRule: string) => bagRule.match(/(\d+) ([a-z]+\s[a-z]+)/))
+            .map<{ amount: number; color: string }>(result => ({amount: parseInt(result[1]), color: result[2]}));
+
+        bagRules.forEach(bagRule => {
+            const {color, amount} = bagRule;
             const colorBag = createRawBag(color);
-            bag.children[color] = {
-                amount,
-                bag: colorBag,
-            };
-            colorBag.parents[bag.color] = {
-                bag,
-            }
+            bag.children[color] = {amount, bag: colorBag, };
+            colorBag.parents[bag.color] = {bag,}
         });
     }
 
@@ -82,19 +75,49 @@ export namespace Y2020_Day7 {
         colors[color] = {childrenCount};
         return childrenCount;
     }
+
+    export function part1(lines: string[], color: string = 'shiny gold'): number {
+        bagTree = {};
+        lines.forEach(parseBag);
+        const parents = Y2020_Day7.countParents(color, {}, [color]);
+        return Object.keys(parents).length - 1;
+    }
+
+    export function part2(lines: string[], color: string = 'shiny gold'): number {
+        bagTree = {};
+        lines.forEach(parseBag);
+        return countChildren(color, {});
+    }
 }
 
 if (!module.parent) {
     const path = require('path');
 
     async function main() {
-        const lines = await FileEngine.readFileToLines(path.join(path.dirname(__filename), './data/y2020_day7.input'), false);
-        lines.forEach(Y2020_Day7.parseBag);
+        const exampleLines = await FileEngine.readFileToLines(path.join(path.dirname(__filename), './data/y2020_day7.example'));
+        assert.equal(Y2020_Day7.part1(exampleLines, 'shiny gold'), 4, 'example 1 part 1')
+        assert.equal(Y2020_Day7.part2(exampleLines, 'shiny gold'), 32, 'example 1 part 1')
+        const example2 = `shiny gold bags contain 2 dark red bags.
+dark red bags contain 2 dark orange bags.
+dark orange bags contain 2 dark yellow bags.
+dark yellow bags contain 2 dark green bags.
+dark green bags contain 2 dark blue bags.
+dark blue bags contain 2 dark violet bags.
+dark violet bags contain no other bags.`;
+        expect(Y2020_Day7.part2(example2.split('\n'), 'shiny gold'), 'part 2, example 2 failing').equals(126);
 
-        const parents = Y2020_Day7.countParents('shiny gold', {}, ['shiny gold']);
-        console.log(Object.keys(parents).length);
+        const lines = await FileEngine.readFileToLines(path.join(path.dirname(__filename), './data/y2020_day7.input'));
+        // part 1
+        const part1Result = Y2020_Day7.part1(lines, 'shiny gold');
+        console.log(part1Result);
 
-        console.log(Y2020_Day7.countChildren('shiny gold', {}))
+        // part 2
+        const part2Result = Y2020_Day7.part2(lines, 'shiny gold');
+        console.log(part2Result);
+
+
+        assert.equal(part1Result, 235, 'part 1 competition');
+        assert.equal(part2Result, 158493, 'part 2 competition');
     }
 
     main().catch(err => console.error(err));
