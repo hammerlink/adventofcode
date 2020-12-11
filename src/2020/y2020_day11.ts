@@ -1,7 +1,6 @@
 import {FileEngine} from '../engine/file.engine';
 import * as assert from 'assert';
 import {BasicMap, MapEngine, MapLocation} from "../engine/map.engine";
-import {Y2020_Day3} from "./y2020_day3";
 
 export namespace Y2020_Day11 {
 
@@ -14,7 +13,7 @@ export namespace Y2020_Day11 {
         if (input === '.') return 'floor';
         if (input === '#') return 'occupied';
         if (input === 'L') return 'empty';
-        throw new Error('uknown type');
+        throw new Error('unknown type');
     }
 
     export function getPointInDirection(map: BasicMap<PlaneSpace>, x: number, y: number,
@@ -32,16 +31,19 @@ export namespace Y2020_Day11 {
     }
 
     export function getLineOfSightPoints(map: BasicMap<PlaneSpace>, x: number, y: number): MapLocation<PlaneSpace>[] {
-        return [
-            getPointInDirection(map, x, y, - 1, - 1),
-            getPointInDirection(map, x, y, - 1, 0),
-            getPointInDirection(map, x, y, - 1, 1),
-            getPointInDirection(map, x, y, 0, - 1),
-            getPointInDirection(map, x, y, 0, 1),
-            getPointInDirection(map, x, y, 1, - 1),
-            getPointInDirection(map, x, y, 1, 0),
-            getPointInDirection(map, x, y, 1, 1),
-        ];
+        return [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1],]
+            .map(v => getPointInDirection(map, x, y, v[0], v[1]));
+    }
+
+    export function getTotalOccupied(map: BasicMap<PlaneSpace>): number {
+        let totalOccupied = 0;
+        for (let x = map.minX; x <= map.maxX; x++) {
+            for (let y = map.minY; y <= map.maxY; y++) {
+                const point = MapEngine.getPoint(map, x, y);
+                if (point.value.type === 'occupied') totalOccupied++;
+            }
+        }
+        return totalOccupied;
     }
 
     export function executeSeatRound(map: BasicMap<PlaneSpace>, maxAllowedFilledSeats = 4,
@@ -82,15 +84,7 @@ export namespace Y2020_Day11 {
             lastChangeCount = changes.changeCount;
         } while (lastChangeCount > 0);
 
-        let totalOccupied = 0;
-        for (let x = map.minX; x <= map.maxX; x++) {
-            for (let y = map.minY; y <= map.maxY; y++) {
-                const point = MapEngine.getPoint(map, x, y);
-                if (point.value.type === 'occupied') totalOccupied++;
-            }
-        }
-
-        return totalOccupied;
+        return getTotalOccupied(map);
     }
 
     export function loadMap(lines: string[]): BasicMap<PlaneSpace> {
@@ -113,15 +107,7 @@ export namespace Y2020_Day11 {
             lastChangeCount = changes.changeCount;
         } while (lastChangeCount > 0);
 
-        let totalOccupied = 0;
-        for (let x = map.minX; x <= map.maxX; x++) {
-            for (let y = map.minY; y <= map.maxY; y++) {
-                const point = MapEngine.getPoint(map, x, y);
-                if (point.value.type === 'occupied') totalOccupied++;
-            }
-        }
-
-        return totalOccupied;
+        return getTotalOccupied(map);
     }
 
 }

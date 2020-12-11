@@ -56,4 +56,17 @@ export namespace MapEngine {
         while (index.length < maxLength) index += ' ';
         return index;
     }
+
+    export function getAdjacentPoints<T>(map: BasicMap<T>, x: number, y: number): MapLocation<T>[] {
+        return [
+            getPoint(map, x - 1, y - 1),
+            getPoint(map, x - 1, y),
+            getPoint(map, x - 1, y + 1),
+            getPoint(map, x, y - 1),
+            getPoint(map, x, y + 1),
+            getPoint(map, x + 1, y - 1),
+            getPoint(map, x + 1, y),
+            getPoint(map, x + 1, y + 1),
+        ];
+    }
 }
