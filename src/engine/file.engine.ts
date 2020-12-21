@@ -10,7 +10,7 @@ export namespace FileEngine {
 
         const lines: string[] = [];
         for await (const line of rl) {
-            if (ignoreEmpty && !line) return;
+            if (ignoreEmpty && !line) return lines;
             lines.push(line);
         }
         return lines;

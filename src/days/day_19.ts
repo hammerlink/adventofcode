@@ -1,5 +1,5 @@
 import {ProgramManager} from "../manager/program.manager";
-import {BasicMap} from "../engine/map.engine";
+import {BasicMap, MapEngine} from "../engine/map.engine";
 
 export namespace Day19 {
     export interface ScanLocation {
@@ -21,8 +21,91 @@ export namespace Day19 {
         return result;
     }
 
+    export async function isPointAffected(intCode: number[], map: BasicMap<ScanLocation>, x: number, y: number): Promise<boolean> {
+        let point = MapEngine.getPoint(map, x, y);
+        if (!point) {
+            const v = await scanPoint(intCode, [x, y]);
+            point = MapEngine.setPointInMap(map, x, y, {value: v});
+        }
+        return point && point.value.value === 1;
+    }
+
+    export async function isSantaZone(intCode: number[], map: BasicMap<ScanLocation>, startX: number,
+                                      startY: number): Promise<boolean> {
+        if (! await isPointAffected(intCode, map, startX, startY)) return false;
+        for (let x = startX; x < startX + 100; x++) if (! await isPointAffected(intCode, map, x, startY)) return false;
+        for (let y = startY; y < startY + 100; y++) if (! await isPointAffected(intCode, map, startX, y)) return false;
+        return true;
+    }
+
+    export function isSantaZoneSync(map: BasicMap<ScanLocation>, startX: number, y: number): boolean {
+        for (let x = startX; x < startX + 100; x++) {
+            const firstY = y + 100;
+            const firstPoint = MapEngine.getPoint(map, x, firstY);
+            if (!firstPoint || firstPoint.value.value === 0) return false;
+            const point = MapEngine.getPoint(map, x, y);
+            if (!point || point.value.value === 0) return false;
+        }
+        return true;
+    }
+
     export async function scanZone(intCode: number[], xSize = 50, ySize = 50): Promise<BasicMap<ScanLocation>> {
-        return null;
+        const map = MapEngine.newMap<ScanLocation>();
+        let first = false;
+        let startX, startY = null;
+        for (let x = 0; x < xSize; x++) {
+            if (startX) break;
+            for (let y = 0; y < ySize; y++) {
+                const v = await Day19.scanPoint(intCode, [x, y]);
+                MapEngine.setPointInMap(map, x, y, {value: v});
+                if (v === 1 && first) {
+                    startX = x;
+                    startY = y;
+                    break;
+                }
+                first = true;
+            }
+        }
+        console.log(startX, startY);
+        let found = false;
+        let firstX = startX;
+        let lineY = startY;
+        while (!found) {
+            let lineX = firstX;
+            let firstXSet = false;
+            let previousFound = true;
+            while (!firstXSet || !previousFound) {
+                const isAffected = await isPointAffected(intCode, map, lineX, lineY);
+                lineX++;
+                if (!isAffected) continue;
+                if (!firstXSet) {
+                    firstXSet = true;
+                    firstX = lineX - 1;
+                }
+                if (await isSantaZone(intCode, map, lineX, lineY)) {
+                    console.log('found', lineX, lineY);
+                    found = true;
+                    break;
+                }
+            }
+
+            lineY++;
+            console.log('new line', lineY);
+        }
+        return map;
+    }
+
+    export async function basicScanZone(intCode: number[],
+                                        startX = 0, startY = 0,
+                                        xSize = 50, ySize = 50): Promise<BasicMap<ScanLocation>> {
+        const map = MapEngine.newMap<ScanLocation>();
+        for (let x = startX; x < startX + xSize; x++) {
+            for (let y = startY; y < startY + ySize; y++) {
+                const v = await Day19.scanPoint(intCode, [x, y]);
+                MapEngine.setPointInMap(map, x, y, {value: v});
+            }
+        }
+        return map;
     }
 }
 
@@ -32,13 +115,56 @@ if (!module.parent) {
 
     async function main() {
         // part 1
-        let count = 0;
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                if ((await Day19.scanPoint(intCode, [x, y])) === 1) count++;
+        // let count = 0;
+        // for (let x = 0; x < 50; x++) {
+        //     for (let y = 0; y < 50; y++) {
+        //         if ((await Day19.scanPoint(intCode, [x, y])) === 1) count++;
+        //     }
+        // }
+        // console.log('part 1', count);
+        // 112
+
+
+
+        const map = await Day19.basicScanZone(intCode, 1600, 1800, 400, 500);
+        const fs = require('fs');
+        map.minX = 1600;
+        map.minY = 1800;
+
+        console.log('map made');
+
+        for (let y = map.minY; y < map.maxY; y++) {
+            for (let x = map.minX; x < map.maxX; x++) {
+                if (Day19.isSantaZoneSync(map, x, y)) {
+                    console.log('santa zone', x, y, x*x + y*y);
+                }
             }
         }
-        console.log(count);
+        // const map: BasicMap<Day19.ScanLocation> = JSON.parse(fs.readFileSync('./day_19.json').toString());
+        // fs.writeFileSync('./day_19.json', JSON.stringify(map, null, 4))
+
+        // santa zone 1833 1989
+        // santa zone 1834 1990
+        // santa zone 1835 1991
+        // santa zone 1836 1992
+        // santa zone 1837 1993
+        // santa zone 1840 1997
+
+
+        // MapEngine.printMap(map, location => {
+        //     if (!location) return ' ';
+        //     return location.value.value === 1 ? 'X' : '.';
+        // }, true);
+
+        console.log(Day19.isSantaZoneSync(map, 1840, 2097));
+        // 1840, 1997 too high
+
+        // every 9 y lines, a new point is added left
+        // every 36 y lines, a point is removed right
+        // all points are continued with x+1, y+1
+        // 100 - 104
+
+        // 18331989 to high
     }
 
     main().catch(console.log);
