@@ -93,11 +93,11 @@ export namespace MapEngine {
         return map[x][y][z];
     }
 
-    export function printMap<T>(map: BasicMap<T>, getValue: (location: MapLocation<T>) => string, printIndex = false) {
+    export function printMap<T>(map: BasicMap<T>, getValue: (location: MapLocation<T>) => string, printIndex = false, spaces = true) {
         const maxLength = `${map.maxY}`.length;
         for (let y = map.minY; y <= map.maxY; y++) {
-            let line = `${printIndex ? getPrintIndex(y, maxLength): ''}`;
-            for (let x = map.minX; x <= map.maxX; x++) line += `${getValue(map[x][y])} `;
+            let line = `${printIndex ? y + ' ': ''}`;
+            for (let x = map.minX; x <= map.maxX; x++) line += `${printIndex ? x + ' ' : ''}${getValue(getPoint(map, x, y))}${spaces ? ' ' : ''}`;
             console.log(line);
         }
     }
@@ -149,5 +149,51 @@ export namespace MapEngine {
             }
         }
         return output;
+    }
+
+    export function flipMapXAxis<T>(map: BasicMap<T>): BasicMap<T> {
+        const copy:BasicMap<T> = JSON.parse(JSON.stringify(map));
+        const rangeX = map.maxX - map.minX;
+        for (let y = map.minY; y <= map.maxY; y++) {
+            for (let x = 0; x <= rangeX; x++) {
+                setPointInMap(copy, map.minX + (rangeX - x), y, getPoint(map, map.minX + x, y)?.value);
+            }
+        }
+        return copy;
+    }
+
+    export function flipMapYAxis<T>(map: BasicMap<T>): BasicMap<T> {
+        const copy: BasicMap<T> = JSON.parse(JSON.stringify(map));
+        const rangeY = map.maxY - map.minY;
+        for (let y = 0; y <= rangeY; y++) {
+            for (let x = map.minX; x <= map.maxX; x++) {
+                setPointInMap(copy, x, map.minY + (rangeY - y), getPoint(map, x, map.minY + y)?.value);
+            }
+        }
+        return copy;
+    }
+
+    export function rotateLeft<T>(map: BasicMap<T>): BasicMap<T> {
+        const copy:BasicMap<T> = JSON.parse(JSON.stringify(map));
+        const rangeY = map.maxY - map.minY;
+        const rangeX = map.maxX - map.minX;
+        for (let y = 0; y <= rangeY; y++) {
+            for (let x = 0; x <= rangeX; x++) {
+                setPointInMap(copy, map.minX + y, map.minY + (rangeX - x), getPoint(map, map.minX + x, map.minY + y)?.value);
+            }
+        }
+        return copy;
+    }
+
+    export function rotateRight<T>(map: BasicMap<T>): BasicMap<T> {
+        const copy:BasicMap<T> = JSON.parse(JSON.stringify(map));
+        const rangeY = map.maxY - map.minY;
+        const rangeX = map.maxX - map.minX;
+        for (let y = 0; y <= rangeY; y++) {
+            for (let x = 0; x <= rangeX; x++) {
+                setPointInMap(copy, map.minX + (rangeY - y), map.minY + x, getPoint(map, map.minX + x, map.minY + y)?.value);
+            }
+        }
+        return copy;
     }
 }
