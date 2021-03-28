@@ -93,6 +93,12 @@ export namespace MapEngine {
         return map[x][y][z];
     }
 
+    export function iterateMap<T>(map: BasicMap<T>, iterateFunction: (location: MapLocation<T>) => any) {
+        for (let y = map.minY; y <= map.maxY; y++) {
+            for (let x = map.minX; x <= map.maxX; x++) iterateFunction(getPoint(map, x, y));
+        }
+    }
+
     export function printMap<T>(map: BasicMap<T>, getValue: (location: MapLocation<T>) => string, printIndex = false, spaces = true) {
         const maxLength = `${map.maxY}`.length;
         for (let y = map.minY; y <= map.maxY; y++) {
