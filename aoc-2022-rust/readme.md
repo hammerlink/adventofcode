@@ -11,3 +11,10 @@ Second of all I while do this all in a new IDE, neovim.
 ```bash
 cargo run --bin day1
 ```
+
+## Debugging rust
+A first attempt at debugging in vim was successfull by using the following blog:
+https://togglebit.io/posts/debugging-rust-in-vim/
+
+It' still giving a couple of issues related to the window splitting of my nvchad configuration.
+To be continued.
