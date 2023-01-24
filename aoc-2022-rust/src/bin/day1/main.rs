@@ -4,9 +4,8 @@ use std::fs;
 struct Elf {
     food: u32,
 }
-fn main() {
-    // let input_path = "src/bin/day1/input.example";
-    let input_path = "src/bin/day1/input";
+
+fn parse_input(input_path: &str) -> Vec<Elf> {
     let contents = fs::read_to_string(input_path)
         .expect("Should have been able to read the file"); 
     let raw_input: Vec<&str> = contents.split("\n").collect();
@@ -22,7 +21,6 @@ fn main() {
         if char_amount > 0 {
             let food_amount: u32 = s.parse().expect("Number desired"); 
             current_elf.food += food_amount;
-            println!("food_amount: {} - current_elf food: {}", food_amount, current_elf.food);
         } else {
             elves.push(current_elf.clone());
             if current_elf.food > largestTotalFood {
@@ -31,10 +29,21 @@ fn main() {
             current_elf = Elf {
                 food: 0,
             };
-            println!("new elf, elves total {}", elves.len());
         }
 
     }
     println!("Largest carried total food: {}", largestTotalFood);
+    return elves;
+}
+
+fn main() {
+    let input_example_path = "src/bin/day1/input.example";
+    let input_path = "src/bin/day1/input";
+    
+    println!("Part 1 - example input");
+    let elves_example = parse_input(&input_example_path);
+
+    println!("Part 1 - input");
+    let elves = parse_input(&input_path);
 }
 
