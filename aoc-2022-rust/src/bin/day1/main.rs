@@ -36,14 +36,30 @@ fn parse_input(input_path: &str) -> Vec<Elf> {
     return elves;
 }
 
+fn calculate_top_tree_total(elves: &mut Vec<Elf>) {
+    elves.sort_by(|a, b| b.food.cmp(&a.food));
+
+    let top_tree = &elves[0..3];
+    let total = top_tree.into_iter().fold(0, |total, value| total + value.food);
+
+    println!("total food of top tree: {}", total);
+}
+
 fn main() {
     let input_example_path = "src/bin/day1/input.example";
     let input_path = "src/bin/day1/input";
     
     println!("Part 1 - example input");
-    let elves_example = parse_input(&input_example_path);
+    let mut elves_example = parse_input(&input_example_path);
 
     println!("Part 1 - input");
-    let elves = parse_input(&input_path);
+    let mut elves = parse_input(&input_path);
+
+    println!("Part 2 - example input");
+    calculate_top_tree_total(&mut elves_example);
+
+    println!("Part 2 - input");
+    calculate_top_tree_total(&mut elves);
+
 }
 
