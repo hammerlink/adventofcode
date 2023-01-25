@@ -6,9 +6,9 @@ enum GameOptions {
     Rock,
     Paper,
     Scissors,
-    ReasonedRock,
-    ReasonedPaper,
-    ReasonedScissors,
+    LoseRock,
+    DrawPaper,
+    WinScissors,
 }
 
 impl fmt::Display for GameOptions {
@@ -17,9 +17,9 @@ impl fmt::Display for GameOptions {
            GameOptions::Rock => write!(f, "Rock"),
            GameOptions::Paper => write!(f, "Paper"),
            GameOptions::Scissors => write!(f, "Scissors"),
-           GameOptions::ReasonedRock => write!(f, "ReasonedRock"),
-           GameOptions::ReasonedPaper => write!(f, "ReasonedPaper"),
-           GameOptions::ReasonedScissors => write!(f, "ReasonedScissors"),
+           GameOptions::LoseRock => write!(f, "LoseRock"),
+           GameOptions::DrawPaper => write!(f, "DrawPaper"),
+           GameOptions::WinScissors => write!(f, "WinScissors"),
        }
     }
 }
@@ -58,25 +58,25 @@ fn parse_column(input: &str) -> GameOptions {
         "A" => GameOptions::Rock,
         "B" => GameOptions::Paper,
         "C" => GameOptions::Scissors,
-        "X" => GameOptions::ReasonedRock,
-        "Y" => GameOptions::ReasonedPaper,
-        "Z" => GameOptions::ReasonedScissors,
+        "X" => GameOptions::LoseRock,
+        "Y" => GameOptions::DrawPaper,
+        "Z" => GameOptions::WinScissors,
         _ => panic!("mismatching column : {}", input)
     }
 }
 
 fn get_option_score(option: &GameOptions) -> u32 {
     return match option {
-        GameOptions::ReasonedRock => 1,
-        GameOptions::ReasonedPaper => 2,
-        GameOptions::ReasonedScissors => 3,
+        GameOptions::LoseRock => 1,
+        GameOptions::DrawPaper => 2,
+        GameOptions::WinScissors => 3,
         _ => 0,
     };
 }
 
 fn get_game_score(elf_option: &GameOptions, your_option: &GameOptions) -> u32 {
     match your_option {
-        GameOptions::ReasonedRock => {
+        GameOptions::LoseRock => {
             return match elf_option {
                 GameOptions::Rock => 3,
                 GameOptions::Paper => 0,
@@ -84,7 +84,7 @@ fn get_game_score(elf_option: &GameOptions, your_option: &GameOptions) -> u32 {
                 _ => panic!("game match issue : {} : {}", elf_option, your_option),
             }
         },
-        GameOptions::ReasonedPaper => {
+        GameOptions::DrawPaper => {
             return match elf_option {
                 GameOptions::Rock => 6,
                 GameOptions::Paper => 3,
@@ -92,7 +92,7 @@ fn get_game_score(elf_option: &GameOptions, your_option: &GameOptions) -> u32 {
                 _ => panic!("game match issue : {} : {}", elf_option, your_option),
             }
         },
-        GameOptions::ReasonedScissors => {
+        GameOptions::WinScissors => {
             return match elf_option {
                 GameOptions::Rock => 0,
                 GameOptions::Paper => 6,
@@ -104,7 +104,52 @@ fn get_game_score(elf_option: &GameOptions, your_option: &GameOptions) -> u32 {
     }
 }
 
-fn get_score(game_command: &GameCommand) -> u32 {
+fn part2_get_game_score(game_command: &GameCommand) -> u32 {
+    assert!(game_command.game_option.len() as u32 == 2);
+    let elf_option = &game_command.game_option[0];
+    let your_option = &game_command.game_option[1];
+
+
+    match your_option {
+        GameOptions::LoseRock => {
+            let game_score = 0;
+            let your_option: GameOptions = match elf_option {
+                GameOptions::Rock => GameOptions::WinScissors,
+                GameOptions::Paper => GameOptions::LoseRock,
+                GameOptions::Scissors => GameOptions::DrawPaper,
+                _ => panic!("game match issue : {} : {}", elf_option, your_option),
+
+            };
+            return game_score + get_option_score(&your_option);
+        },   
+        GameOptions::DrawPaper => {
+            let game_score = 3;
+            let your_option: GameOptions = match elf_option {
+                GameOptions::Rock => GameOptions::LoseRock,
+                GameOptions::Paper => GameOptions::DrawPaper,
+                GameOptions::Scissors => GameOptions::WinScissors,
+                _ => panic!("game match issue : {} : {}", elf_option, your_option),
+
+            };
+            return game_score + get_option_score(&your_option);
+        },   
+        GameOptions::WinScissors => {
+            let game_score = 6;
+            let your_option: GameOptions = match elf_option {
+                GameOptions::Rock => GameOptions::DrawPaper,
+                GameOptions::Paper => GameOptions::WinScissors,
+                GameOptions::Scissors => GameOptions::LoseRock,
+                _ => panic!("game match issue : {} : {}", elf_option, your_option),
+
+            };
+            return game_score + get_option_score(&your_option);
+        },   
+       _ => panic!("game match issue : {} : {}", elf_option, your_option),
+
+    }
+}
+
+fn get_score_part_1(game_command: &GameCommand) -> u32 {
     assert!(game_command.game_option.len() as u32 == 2);
     let elf_action = &game_command.game_option[0];
     let reasoned_action = &game_command.game_option[1];
@@ -120,20 +165,21 @@ fn main() {
     
     println!("Part 1 - example input");
     let game_example = parse_input(&input_example_path);
-    let example_score = game_example.into_iter().fold(0, |t, v| t + get_score(&v));
+    let example_score = game_example.into_iter().fold(0, |t, v| t + get_score_part_1(&v));
     assert!(example_score == 15);
 
     println!("Part 1 - input");
     let game = parse_input(&input_path);
-    let score = game.into_iter().fold(0, |t, v| t + get_score(&v));
+    let score = game.into_iter().fold(0, |t, v| t + get_score_part_1(&v));
     println!("part 1 - score {}", score);
 
     println!("Part 2 - example input");
-    // calculate_top_tree_total(&mut elves_example);
+    let example_part2_score = parse_input(&input_example_path).into_iter().fold(0, |t, v| t + part2_get_game_score(&v));
+    assert!(example_part2_score == 12);
 
     println!("Part 2 - input");
-    // calculate_top_tree_total(&mut elves);
-
+    let part2_score = parse_input(&input_path).into_iter().fold(0, |t, v| t + part2_get_game_score(&v));
+    println!("part 2 - score {}", part2_score);
  }
 
 
