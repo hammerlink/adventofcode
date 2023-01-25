@@ -49,6 +49,7 @@ fn main() {
     let input_example_path = "src/bin/day1/input.example";
     let input_path = "src/bin/day1/input";
     
+    // input_path.len()
     println!("Part 1 - example input");
     let mut elves_example = parse_input(&input_example_path);
 
