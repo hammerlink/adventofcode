@@ -75,7 +75,7 @@ fn get_option_score(option: &GameOptions) -> u32 {
 }
 
 fn get_game_score(elf_option: &GameOptions, your_option: &GameOptions) -> u32 {
-    return match your_option {
+    match your_option {
         GameOptions::ReasonedRock => {
             return match elf_option {
                 GameOptions::Rock => 3,
@@ -101,7 +101,7 @@ fn get_game_score(elf_option: &GameOptions, your_option: &GameOptions) -> u32 {
             }
         },
         _ => panic!("game match issue : {} : {}", elf_option, your_option),
-    };
+    }
 }
 
 fn get_score(game_command: &GameCommand) -> u32 {
