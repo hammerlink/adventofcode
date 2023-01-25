@@ -115,12 +115,6 @@ fn get_score(game_command: &GameCommand) -> u32 {
 }
 
 fn main() {
-    // let mut symbol_map_first_column = object!{
-    //     rock: : "X",
-    //     paper: "Y",
-    //     scissors: "Z",
-    // };
-
     let input_example_path = "src/bin/day2/input.example";
     let input_path = "src/bin/day2/input";
     
