@@ -1,6 +1,8 @@
+use std::ops::Index;
 use substring::Substring;
 use aoc_lib::engine::input_engine::{read_day_input, read_day_input_example};
 
+#[derive(Clone)]
 struct RuckSack {
     compartment_1: Vec<u32>,
     compartment_2: Vec<u32>,
@@ -40,7 +42,7 @@ fn convert_rucksack_char_to_priority(input: char) -> u32 {
 
 fn find_wrong_rucksack_item(rucksack: &RuckSack) -> u32 {
     let compartment1_matches: Vec<&u32> = rucksack.compartment_1.iter().filter(|x| rucksack.compartment_2.contains(x)).collect();
-    if compartment1_matches.len() > 0 { return compartment1_matches[0].clone() }
+    if compartment1_matches.len() > 0 { return compartment1_matches[0].clone(); }
     rucksack.compartment_2.iter().find(|x| rucksack.compartment_1.contains(x)).unwrap().clone()
 }
 
@@ -53,9 +55,40 @@ fn part_1(input: &Vec<String>) {
     println!("{}", result)
 }
 
+fn find_shared_priority(input: &Vec<RuckSack>) -> u32 {
+    let mut remaining_prios: Vec<u32> = Vec::new();
+    for (i, ruck_sack) in input.iter().enumerate() {
+        if i == 0 {
+            for c_type in ruck_sack.compartment_1.iter() {
+                if !remaining_prios.contains(c_type) { remaining_prios.push(c_type.clone()); }
+            }
+            for c_type in ruck_sack.compartment_2.iter() {
+                if !remaining_prios.contains(c_type) { remaining_prios.push(c_type.clone()); }
+            }
+            continue;
+        }
+        for (i, c_type) in remaining_prios.clone().iter().enumerate() {
+            if !ruck_sack.compartment_1.contains(c_type) && !ruck_sack.compartment_2.contains(c_type) {
+                remaining_prios.remove(remaining_prios.iter().position(|x| x == c_type).unwrap());
+            }
+        }
+    }
+    assert_eq!(remaining_prios.len(), 1);
+    return remaining_prios[0];
+}
+
 fn part_2(input: &Vec<String>) {
     let result = parse_input(input);
-    println!("{}", result.len())
+    let mut i = 0usize;
+    let mut total = 0u32;
+    loop {
+        let elf_group = &result[i..(i + 3)].to_vec();
+        total += find_shared_priority(elf_group);
+        i += 3;
+        if i >= result.len() { break; }
+    }
+
+    println!("{}", total)
 }
 
 fn main() {
@@ -88,6 +121,7 @@ mod convert_rucksack_char_to_priority {
         assert_eq!(convert_rucksack_char_to_priority('z'), 26);
     }
 }
+
 #[cfg(test)]
 mod split_line_in_half {
     use super::split_line_in_half;
