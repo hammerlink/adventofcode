@@ -8,9 +8,16 @@ Second of all I while do this all in a new IDE, neovim.
 
 
 ## Running a day
-```bash
+```bash 
 cargo run --bin day1
 ```
+
+Found a new way of running rust files:
+```
+rustc src/engine.rs
+```
+This will run any rust file as long as it contains a fn main().
+Very similar to node running.
 
 ## Debugging rust
 A first attempt at debugging in vim was successfull by using the following blog:
