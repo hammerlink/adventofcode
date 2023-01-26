@@ -14,7 +14,7 @@ fn parse_input(input_path: &str) -> Vec<Elf> {
     let mut current_elf: Elf = Elf { 
         food: 0,
     };
-    let mut largestTotalFood: u32 = 0;
+    let mut largest_total_food: u32 = 0;
 
     for s in raw_input {
         let char_amount = s.len();
@@ -23,8 +23,8 @@ fn parse_input(input_path: &str) -> Vec<Elf> {
             current_elf.food += food_amount;
         } else {
             elves.push(current_elf.clone());
-            if current_elf.food > largestTotalFood {
-                largestTotalFood = current_elf.food;
+            if current_elf.food > largest_total_food {
+                largest_total_food = current_elf.food;
             }
             current_elf = Elf {
                 food: 0,
@@ -32,7 +32,7 @@ fn parse_input(input_path: &str) -> Vec<Elf> {
         }
 
     }
-    println!("Largest carried total food: {}", largestTotalFood);
+    println!("Largest carried total food: {}", largest_total_food);
     return elves;
 }
 

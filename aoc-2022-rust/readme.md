@@ -12,12 +12,19 @@ Second of all I while do this all in a new IDE, neovim.
 cargo run --bin day1
 ```
 
+### Rust script
+https://crates.io/crates/rust-script
+
+### Rust compiling
 Found a new way of running rust files:
 ```
-rustc src/engine.rs
+rustc src/days/day3.rs --out-dir target && ./target/day3
+
 ```
 This will run any rust file as long as it contains a fn main().
 Very similar to node running.
+
+
 
 ## Debugging rust
 A first attempt at debugging in vim was successfull by using the following blog:
