@@ -1,9 +1,11 @@
+use std::borrow::BorrowMut;
 use aoc_lib::engine::input_engine::{read_day_input, read_day_input_example};
 use regex::Regex;
+use std::collections::{BTreeMap, HashSet};
 
 struct Elf {
-   section_start: usize,
-   section_end: usize,
+    section_start: usize,
+    section_end: usize,
 }
 
 struct ElfPair {
@@ -54,26 +56,33 @@ fn is_overlapped(pairs: &Vec<ElfPair>, elf_pair: &ElfPair) -> bool {
 }
 
 fn is_elf_overlapped_by_pair(elf: &Elf, pair: &ElfPair) -> bool {
-    if is_elf_overlapped_by_elf(&elf, &pair.elf_1) {return true;}
-    if is_elf_overlapped_by_elf(&elf, &pair.elf_2) {return true;}
+    if is_elf_overlapped_by_elf(&elf, &pair.elf_1) { return true; }
+    if is_elf_overlapped_by_elf(&elf, &pair.elf_2) { return true; }
     false
 }
 
 fn is_elf_overlapped_by_elf(elf: &Elf, other_elf: &Elf) -> bool {
     if elf.section_start < other_elf.section_start { return false; }
-    if elf.section_end > other_elf.section_end {return false;}
+    if elf.section_end > other_elf.section_end { return false; }
     true
 }
 
-fn is_pair_internally_overlapping(pair: &ElfPair) -> bool {
+fn is_pair_internally_fully_overlapping(pair: &ElfPair) -> bool {
     is_elf_overlapped_by_elf(&pair.elf_1, &pair.elf_2) || is_elf_overlapped_by_elf(&pair.elf_2, &pair.elf_1)
 }
 
+fn is_pair_internally_partly_overlapping(ElfPair { elf_1, elf_2, .. }: &ElfPair) -> bool {
+    (elf_1.section_start >= elf_2.section_start && elf_1.section_start <= elf_2.section_end)
+        || (elf_1.section_end <= elf_2.section_end && elf_1.section_end >= elf_2.section_start)
+        || (elf_2.section_start >= elf_1.section_start && elf_2.section_start <= elf_1.section_end)
+        || (elf_2.section_end <= elf_1.section_end && elf_2.section_end >= elf_1.section_start)
+}
+
 fn part_1(input: &Vec<String>) -> usize {
-    let elf_pairs  = parse_input(input);
+    let elf_pairs = parse_input(input);
     let result = elf_pairs
         .iter()
-        .filter(|pair| is_pair_internally_overlapping(pair))
+        .filter(|pair| is_pair_internally_fully_overlapping(pair))
         .map(|item| item.clone())
         .collect::<Vec<&ElfPair>>();
     let count = result.len();
@@ -81,9 +90,42 @@ fn part_1(input: &Vec<String>) -> usize {
     count
 }
 
-fn part_2(input: &Vec<String>) {
-    let result = parse_input(input);
-    // println!("{}", result)
+struct Section {
+    section_id: usize,
+    pair_ids: HashSet<usize>,
+}
+
+impl Section {
+    fn add_pair_id(&mut self, pair_id: usize) { self.pair_ids.insert(pair_id); }
+}
+
+fn fill_sections_with_pair(sections: &mut BTreeMap<usize, Section>, pair: &ElfPair) {
+    fill_sections_with_elf(sections, &pair.elf_1, pair.pair_id);
+    fill_sections_with_elf(sections, &pair.elf_2, pair.pair_id);
+}
+
+fn fill_sections_with_elf(sections: &mut BTreeMap<usize, Section>, elf: &Elf, pair_id: usize) {
+    for i in elf.section_start..=elf.section_end {
+        if !sections.contains_key(&i) {
+            sections.insert(i, Section {
+                section_id: i,
+                pair_ids: HashSet::new(),
+            });
+        }
+        sections.get_mut(&i).unwrap().add_pair_id(pair_id);
+    }
+}
+
+fn part_2(input: &Vec<String>) -> usize {
+    let elf_pairs = parse_input(input);
+    let result = elf_pairs
+        .iter()
+        .filter(|pair| is_pair_internally_partly_overlapping(pair))
+        .map(|item| item.clone())
+        .collect::<Vec<&ElfPair>>();
+    let count = result.len();
+    println!("{}", count);
+    count
 }
 
 fn main() {
@@ -98,7 +140,7 @@ fn main() {
     part_1(&input);
 
     println!("Part 2 - example input");
-    part_2(&example_input);
+    assert_eq!(part_2(&example_input), 4);
 
     println!("Part 2 - input");
     part_2(&input);
