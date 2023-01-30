@@ -2,6 +2,10 @@ use std::fs;
 use regex::Regex;
 use std::borrow::{Borrow, Cow};
 
+
+// TODO include_str! https://doc.rust-lang.org/std/macro.include_str.html#
+// this should be an improvement
+
 pub fn read_input_file(input_path: String) -> Vec<String> {
     fs::read_to_string(&input_path)
         .expect(format!("Should have been able to read the file {}", input_path).as_str())

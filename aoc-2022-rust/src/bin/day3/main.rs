@@ -69,7 +69,7 @@ fn find_shared_priority(input: &Vec<RuckSack>) -> u32 {
         }
         for (i, c_type) in remaining_prios.clone().iter().enumerate() {
             if !ruck_sack.compartment_1.contains(c_type) && !ruck_sack.compartment_2.contains(c_type) {
-                remaining_prios.remove(remaining_prios.iter().position(|x| x == c_type).unwrap());
+remaining_prios.remove(remaining_prios.iter().position(|x| x == c_type).unwrap());
             }
         }
     }
