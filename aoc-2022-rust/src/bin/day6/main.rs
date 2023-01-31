@@ -1,4 +1,4 @@
-use std::ops::Index;
+use std::ops::{Add, Index};
 use std::slice::SliceIndex;
 use aoc_lib::engine::input_engine::{read_day_input, read_day_input_example};
 
@@ -24,8 +24,24 @@ fn part_1(input: &Vec<String>) {
 }
 
 fn part_2(input: &Vec<String>) {
-    let result = parse_input(input);
-    println!("{}", result)
+    let result = input.index(0);
+    for i in 14..=result.len() {
+        if is_start_of_message_marker(&result[(i-14)..i]) {
+            println!("{}", i);
+            return;
+        }
+    }
+}
+
+fn is_start_of_message_marker(piece: &str) -> bool {
+    let mut fragment: Vec<char> = Vec::new();
+    for c in piece.chars() {
+        if fragment.contains(&c) {
+            return false;
+        }
+        fragment.push(c);
+    }
+    true
 }
 
 fn main() {
