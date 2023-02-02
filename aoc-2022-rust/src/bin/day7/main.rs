@@ -59,7 +59,7 @@ impl FSEntry {
     }
 
     pub fn calculate_size(&mut self) -> u128 {
-        if !self.is_directory || self.is_dir_size_calculated { return self.total_size }
+        if !self.is_directory || self.is_dir_size_calculated { return self.total_size; }
         let mut total_size: u128 = 0;
         for child_ref in self.children.iter() {
             total_size += child_ref.as_ref().borrow_mut().calculate_size();
@@ -152,7 +152,6 @@ fn calculate_total_part_1(node: NodeLink, total: u128) -> u128 {
         let child = child_ref.as_ref().borrow();
         if child.is_directory && child.total_size < 100000 { output += child.total_size; }
         output = calculate_total_part_1(child_ref.clone(), output);
-        // total_size += child_ref.as_ref().borrow_mut().calculate_size();
     }
     output
 }
@@ -162,9 +161,29 @@ fn part_1(input: &Vec<String>) {
     println!("{}", calculate_total_part_1((&file_system.root).clone(), 0))
 }
 
+fn calculate_total_part_2(node: NodeLink, required_space: u128, smallest_directory_size: u128) -> u128 {
+    let mut output = smallest_directory_size;
+    let children = &node.as_ref().borrow().children;
+    for child_ref in children.iter().filter(|x| {
+        let child = x.as_ref().borrow();
+        child.is_directory && child.total_size >= required_space
+    }) {
+        let child = child_ref.as_ref().borrow();
+        let total_size = child.total_size;
+        if total_size < output {
+            output = total_size;
+        }
+
+        let new_result = calculate_total_part_2(child_ref.clone(), required_space, output);
+        if new_result < output { output = new_result; }
+    }
+    output
+}
+
 fn part_2(input: &Vec<String>) {
     let result = parse_input(input);
-    println!("{}", result.root.as_ref().borrow().total_size)
+    let necessary_space = 30000000 - (70000000 - result.root.as_ref().borrow().total_size);
+    println!("{}", calculate_total_part_2((&result.root).clone(), necessary_space, result.root.as_ref().borrow().total_size))
 }
 
 fn main() {
@@ -184,4 +203,3 @@ fn main() {
     println!("Part 2 - input");
     part_2(&input);
 }
-
