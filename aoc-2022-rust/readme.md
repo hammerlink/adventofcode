@@ -32,3 +32,9 @@ https://togglebit.io/posts/debugging-rust-in-vim/
 
 It' still giving a couple of issues related to the window splitting of my nvchad configuration.
 To be continued.
+
+
+## Running test to check code
+```
+cargo test --bin day8 test_split -- --show-output
+```
