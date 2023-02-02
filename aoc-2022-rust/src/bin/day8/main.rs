@@ -98,10 +98,88 @@ impl TreePatch {
         let mut output: usize = 0;
         for x in 0..self.max_x {
             for y in 0..self.max_y {
-                if self.trees[x][y].is_visible() {
+                if self.trees[y][x].is_visible() {
                     output += 1;
                 }
             }
+        }
+        output
+    }
+
+    pub fn calculate_best_view_score(&self) -> u32 {
+        let mut output: u32 = 0;
+        for x in 0..self.max_x {
+            for y in 0..self.max_y {
+                if x == 2 && y == 3 {
+                    let test = true;
+                }
+                let score = self.calculate_view_score(x, y);                
+                if score > output { output = score; }    
+            }
+        }
+        output
+    }
+
+    pub fn calculate_view_score(&self, x: usize, y: usize) -> u32 {
+        let score_right = self.calculate_view_score_right(x, y);
+        if score_right == 0 { return 0; }
+
+        let score_left = self.calculate_view_score_left(x, y);
+        if score_left == 0 { return 0; }
+
+        let score_bottom = self.calculate_view_score_bottom(x, y);
+        if score_bottom == 0 { return 0; }
+
+        let score_top = self.calculate_view_score_top(x, y);
+        if score_top == 0 {return 0;}
+
+        score_right * score_left * score_bottom * score_top
+    }
+
+    pub fn calculate_view_score_right(&self, x_start: usize, y_start: usize) -> u32 {
+        if x_start >= self.max_x - 1 { return 0; }
+        if x_start == self.max_x - 2 { return 1; }
+        let mut output: u32 = 0;
+        let max_height = self.trees[y_start][x_start].height;
+        for x in (x_start + 1)..self.max_x {
+            output += 1;            
+            if self.trees[y_start][x].height >= max_height { break; }        
+        }
+        output
+    }
+
+    pub fn calculate_view_score_left(&self, x_start: usize, y_start: usize) -> u32 {
+        if x_start == 0 { return 0; }
+        if x_start == 1 { return 1; }
+        let mut output: u32 = 0;
+        let max_height = self.trees[y_start][x_start].height;
+        for x in 0..=(x_start - 1) {
+            output += 1;
+            if self.trees[y_start][x_start - 1 - x].height >= max_height { break; }       
+        }
+        output
+    }
+
+    pub fn calculate_view_score_bottom(&self, x_start: usize, y_start: usize) -> u32 {
+        if y_start >= self.max_y - 1 { return 0; }
+        if y_start == self.max_y - 2 { return 1; }
+        let mut output: u32 = 0;
+        let max_height = self.trees[y_start][x_start].height;
+        for y in (y_start + 1)..self.max_y {
+            output += 1;
+            if self.trees[y][x_start].height >= max_height { break; }
+        }
+        output
+    }
+
+    pub fn calculate_view_score_top(&self, x_start: usize, y_start: usize) -> u32 {
+        if y_start == 0 { return 0; }
+        if y_start == 1 { return 1; }
+        let mut output: u32 = 0;
+        let max_height = self.trees[y_start][x_start].height;
+        for y in 0..=(y_start - 1) {
+            output += 1;   
+            if self.trees[y_start - 1 - y][x_start].height >= max_height { break; }     
         }
         output
     }
@@ -149,7 +227,7 @@ fn part_1(input: &Vec<String>) {
 
 fn part_2(input: &Vec<String>) {
     let result = parse_input(input);
-    println!("{}", 0)
+    println!("{}", result.calculate_best_view_score())
 }
 
 fn main() {
@@ -168,5 +246,6 @@ fn main() {
 
     println!("Part 2 - input");
     part_2(&input);
+    // 50160 is too low
 }
 
