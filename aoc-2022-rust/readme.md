@@ -38,3 +38,11 @@ To be continued.
 ```
 cargo test --bin day8 test_split -- --show-output
 ```
+
+## Neovim & new library files
+Today when trying to create a library for handling 2d rasters I had some issues with lsp loading. I didn't get any completion or handling. I resolved this by running the ctags in the root.
+
+```
+ctags -R .
+```
+After re-opening nvim the lsp functions were working correctly.
