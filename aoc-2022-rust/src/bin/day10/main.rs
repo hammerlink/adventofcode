@@ -85,7 +85,6 @@ fn part_1(input: &Vec<String>) {
         let started = cathode.cycle_counter.clone();
         cathode = execute_command(cathode, command);
         if check_trigger && cathode.cycle_counter >= next_cycle_trigger {
-            // println!("cycle {} tube {} - command {}  preivous value{}  cycle-start: {}", cathode.cycle_counter, cathode.tube_value, command.raw, &previous_value, &started);
             if cathode.cycle_counter == next_cycle_trigger {
                 result += execute_cycle_trigger(&next_cycle_trigger, &cathode.tube_value);
             } else {
@@ -103,9 +102,70 @@ fn part_1(input: &Vec<String>) {
     println!("{}", result)
 }
 
+fn get_cycle_visual() -> [bool; 40] {
+    [false; 40]    
+}
+
+fn print_cycle_visual(cycle_visual: &[bool; 40]) {
+    let line = cycle_visual.iter().fold("".to_string(), |t, v| {
+        if *v {return t + "#"}
+        t + "."
+    });
+    println!("{}", line)
+}
+
+fn print_cycle_on_visual(cycle_visual: [bool; 40], tube_value: &isize, cycle: &usize) -> [bool; 40] {
+    let mut output = cycle_visual;
+    let current_cycle = cycle.clone() % 40;
+    let mut start: usize = 0;
+    if current_cycle > 0 { start = current_cycle - 1; }
+    for i in start..=(current_cycle + 1) {
+        if i > 39 { continue; }
+        output[i] = (tube_value.clone() - (i as isize)).abs() <= 1;
+    }
+    output
+}
+
+#[test]
+fn test_cycle_visual() {
+    let mut cycle_visual = get_cycle_visual();
+    cycle_visual = print_cycle_on_visual(cycle_visual, &4, &43);
+    print_cycle_visual(&cycle_visual)
+}
+
 fn part_2(input: &Vec<String>) {
-    let result = parse_input(input);
-    println!("{}", result.len())
+    let mut cathode = CathodeRayTube::new();
+    let mut cycle_triggers: Vec<usize> = vec![240, 200, 160, 120, 80, 40];
+
+    let mut next_cycle_trigger = cycle_triggers.pop().unwrap();
+    let mut next_cycle_line = get_cycle_visual();
+    for (i, command) in parse_input(input).iter().enumerate() {
+        let previous_value = cathode.tube_value.clone();
+        let current_command = command.command.clone();
+        let started = cathode.cycle_counter.clone();
+        cathode = execute_command(cathode, command);
+        // print tube on cycle
+        if current_command == "addx" {
+            if (started + 1) >= next_cycle_trigger {
+                if cycle_triggers.len() > 0 {
+                    next_cycle_trigger = cycle_triggers.pop().unwrap();
+                    print_cycle_visual(&next_cycle_line);
+                    next_cycle_line = get_cycle_visual();
+                } 
+            }
+            next_cycle_line = print_cycle_on_visual(next_cycle_line, &previous_value, &(started + 1));
+        }
+        if cathode.cycle_counter >= next_cycle_trigger {
+            if cycle_triggers.len() > 0 {
+                next_cycle_trigger = cycle_triggers.pop().unwrap();
+                print_cycle_visual(&next_cycle_line);
+                next_cycle_line = get_cycle_visual();
+            } 
+        }
+        next_cycle_line = print_cycle_on_visual(next_cycle_line, &cathode.tube_value, &cathode.cycle_counter);
+       
+    }
+    print_cycle_visual(&next_cycle_line);
 }
 
 fn main() {
@@ -119,10 +179,10 @@ fn main() {
     println!("Part 1 - input");
     part_1(&input);
 
-    // println!("Part 2 - example input");
-    // part_2(&example_input);
-    //
-    // println!("Part 2 - input");
-    // part_2(&input);
+    println!("Part 2 - example input");
+    part_2(&example_input);
+
+    println!("Part 2 - input");
+    part_2(&input);
 }
 
