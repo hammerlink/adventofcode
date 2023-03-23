@@ -14,6 +14,7 @@ struct Monkey {
     items: Vec<Item>,
     operation_expression: String,
     monkey_test: MonkeyTest,
+    inspect_count: u32,
 }
 
 struct MonkeyTest {
@@ -56,33 +57,36 @@ fn parse_input(input: &str) -> Vec<Monkey> {
             },
             operation_expression: operation_raw.to_string(),
             items: monkey_items,
+            inspect_count: 0,
         }
     }).collect::<Vec<Monkey>>();
     monkeys
 }
 
 fn execute_round(mut monkeys: Vec<Monkey>) -> Vec<Monkey> {
-    let mut targets: Vec<(Item, usize)> = vec![];
     for i in 0..(monkeys.len()) {
-        let monkey = monkeys.get_mut(i).unwrap();
-        let mut current_items: Vec<Item> = vec![];
-        swap(&mut current_items, &mut monkey.items);
-        while !current_items.is_empty() {
-            let mut item = current_items.remove(0);
-            let mut worry_level = item.worry_level;
-            let operation = monkey.operation_expression.replace("old", worry_level.to_string().as_str());
-            worry_level = eval(operation.as_str()).unwrap().to_string().parse::<u32>().unwrap();
-            item.worry_level = worry_level / 3;
-            let is_divisible = item.worry_level % monkey.monkey_test.divider == 0;
-            let target_id = if is_divisible { monkey.monkey_test.true_monkey_id } else { monkey.monkey_test.false_monkey_id };
-            targets.push((item, target_id as usize));
+        let mut targets: Vec<(Item, usize)> = vec![];
+        {
+            let mut monkey = monkeys.get_mut(i).unwrap();
+            monkey.inspect_count += monkey.items.len() as u32;
+            let mut current_items: Vec<Item> = vec![];
+            swap(&mut current_items, &mut monkey.items);
+            while !current_items.is_empty() {
+                let mut item = current_items.remove(0);
+                let mut worry_level = item.worry_level;
+                let operation = monkey.operation_expression.replace("old", worry_level.to_string().as_str());
+                worry_level = eval(operation.as_str()).unwrap().to_string().parse::<u32>().unwrap();
+                item.worry_level = worry_level / 3;
+                let is_divisible = item.worry_level % monkey.monkey_test.divider == 0;
+                let target_id = if is_divisible { monkey.monkey_test.true_monkey_id } else { monkey.monkey_test.false_monkey_id };
+                targets.push((item, target_id as usize));
+            }
         }
-    }
-    // todo the targets should be thrown within the same round
-    while !targets.is_empty() {
-        let target = targets.remove(0);
-        let target_monkey = monkeys.get_mut(target.1).unwrap();
-        target_monkey.items.push(target.0);
+        while !targets.is_empty() {
+            let target = targets.remove(0);
+            let target_monkey = monkeys.get_mut(target.1).unwrap();
+            target_monkey.items.push(target.0);
+        }
     }
     monkeys
 }
