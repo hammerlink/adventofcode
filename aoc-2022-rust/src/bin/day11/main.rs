@@ -72,7 +72,7 @@ fn execute_round(mut monkeys: Vec<Monkey>) -> Vec<Monkey> {
             let mut worry_level = item.worry_level;
             let operation = monkey.operation_expression.replace("old", worry_level.to_string().as_str());
             worry_level = eval(operation.as_str()).unwrap().to_string().parse::<u32>().unwrap();
-            item.worry_level = worry_level / 32;
+            item.worry_level = worry_level / 3;
             let is_divisible = item.worry_level % monkey.monkey_test.divider == 0;
             let target_id = if is_divisible { monkey.monkey_test.true_monkey_id } else { monkey.monkey_test.false_monkey_id };
             targets.push((item, target_id as usize));
