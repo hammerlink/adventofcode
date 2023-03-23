@@ -1,4 +1,6 @@
 use regex::Regex;
+use eval::{eval};
+use std::mem::swap;
 
 // required library https://docs.rs/eval/latest/eval/
 
@@ -20,10 +22,15 @@ struct MonkeyTest {
     false_monkey_id: u32,
 }
 
+// impl MonkeyTest {
+//     pub fn throw_item(&self, item: Item) {
+//
+//     }
+// }
 
-fn parse_input(input: &str) -> usize {
-    let monkey_regex = Regex::new(r"Monkey (\d+):\s+Starting items: ((\d+(,\s)?)*)\s+Operation: ([^\n]+)\s+Test: divisible by (\d+)\s+If true: throw to monkey (\d+)\s+If false: throw to monkey (\d+)").unwrap();
-    let monkeys = monkey_regex.captures_iter(input).map(|captures| {
+fn parse_input(input: &str) -> Vec<Monkey> {
+    let monkey_regex = Regex::new(r"Monkey (\d+):\s+Starting items: ((\d+(,\s)?)*)\s+Operation: new = ([^\n]+)\s+Test: divisible by (\d+)\s+If true: throw to monkey (\d+)\s+If false: throw to monkey (\d+)").unwrap();
+    let mut monkeys = monkey_regex.captures_iter(input).map(|captures| {
         let monkey_id = captures[1].parse::<u32>().unwrap(); // start at 1, 0 is the full capture
         let raw_starting_items = captures[2].to_string();
         let mut monkey_items: Vec<Item> = vec![];
@@ -51,12 +58,48 @@ fn parse_input(input: &str) -> usize {
             items: monkey_items,
         }
     }).collect::<Vec<Monkey>>();
-    input.len()
+    monkeys
+}
+
+fn execute_round(mut monkeys: Vec<Monkey>) -> Vec<Monkey> {
+    let mut targets: Vec<(Item, usize)> = vec![];
+    for i in 0..(monkeys.len()) {
+        let monkey = monkeys.get_mut(i).unwrap();
+        let mut current_items: Vec<Item> = vec![];
+        swap(&mut current_items, &mut monkey.items);
+        while !current_items.is_empty() {
+            let mut item = current_items.remove(0);
+            let mut worry_level = item.worry_level;
+            let operation = monkey.operation_expression.replace("old", worry_level.to_string().as_str());
+            worry_level = eval(operation.as_str()).unwrap().to_string().parse::<u32>().unwrap();
+            item.worry_level = worry_level / 32;
+            let is_divisible = item.worry_level % monkey.monkey_test.divider == 0;
+            let target_id = if is_divisible { monkey.monkey_test.true_monkey_id } else { monkey.monkey_test.false_monkey_id };
+            targets.push((item, target_id as usize));
+        }
+    }
+    // todo the targets should be thrown within the same round
+    while !targets.is_empty() {
+        let target = targets.remove(0);
+        let target_monkey = monkeys.get_mut(target.1).unwrap();
+        target_monkey.items.push(target.0);
+    }
+    monkeys
+}
+
+#[test]
+fn test_u32_division() {
+    assert_eq!(10 / 3, 3);
+    assert_eq!(10 % 3, 1);
 }
 
 fn part_1(input: &str) {
-    let result = parse_input(input);
-    println!("{}", result)
+    let mut monkeys = parse_input(input);
+    for i in 0..20 {
+        println!("round {}", i);
+        monkeys = execute_round(monkeys);
+    }
+    println!("{}", 0)
 }
 
 // fn part_2(input: &Vec<String>) {
