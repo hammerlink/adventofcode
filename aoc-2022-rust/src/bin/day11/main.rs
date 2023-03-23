@@ -99,11 +99,12 @@ fn test_u32_division() {
 
 fn part_1(input: &str) {
     let mut monkeys = parse_input(input);
-    for i in 0..20 {
-        println!("round {}", i);
-        monkeys = execute_round(monkeys);
-    }
-    println!("{}", 0)
+    for _i in 0..20 { monkeys = execute_round(monkeys); }
+    let mut monkey_inspects: Vec<u32> = vec![];
+    monkeys.iter().for_each(|monkey| monkey_inspects.push(monkey.inspect_count));
+    monkey_inspects.sort_by(|a, b| b.cmp(a));
+    assert!(monkey_inspects.len() >= 2);
+    println!("{}", monkey_inspects[0] * monkey_inspects[1])
 }
 
 // fn part_2(input: &Vec<String>) {
