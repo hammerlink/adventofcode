@@ -10,6 +10,7 @@ name = "aoc_lib"
 path = "src/lib.rs"
 
 [dependencies]
+eval = "0.4.3"
 lazy_static = "1.4.0"
 regex = "1.7.1"
 substring = "1.4.5"
