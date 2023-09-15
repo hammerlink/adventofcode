@@ -1,7 +1,6 @@
-use std::fs;
 use regex::Regex;
 use std::borrow::{Borrow, Cow};
-
+use std::fs;
 
 // TODO include_str! https://doc.rust-lang.org/std/macro.include_str.html#
 // this should be an improvement
