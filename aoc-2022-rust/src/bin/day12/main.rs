@@ -1,7 +1,4 @@
-use aoc_lib::engine::{
-    grid_engine::{Grid, Location, BASIC_DIRECTIONS},
-    util_engine::print_fixed_length_number,
-};
+use aoc_lib::engine::grid_engine::{Grid, Location, BASIC_DIRECTIONS};
 
 struct HillLocation {
     pub raw_char: char,
@@ -93,47 +90,35 @@ impl HillField {
         }
         least_steps.unwrap()
     }
-}
 
-fn store_best_last_visited(grid: &mut Grid<HillLocation>) {
-    grid.iterate_mut(|c| {
-        if c.is_none() {
-            return None;
-        }
-        let mut cell = c.unwrap();
-        if !cell.last_visited.is_none() {
-            cell.best_last_visualization = cell.last_visualization;
-            let last_visited = cell.last_visited.unwrap();
-            if cell.best_last_visited.is_none() || cell.best_last_visited.unwrap() > last_visited {
-                cell.best_last_visited = Some(last_visited);
+    pub fn get_best_start_point(&self) -> i32 {
+        let l: HillLocation = self
+            .grid
+            .get_cell_value(self.start.x, self.start.y)
+            .unwrap();
+        let mut best_score = l.best_last_visited.unwrap();
+        for y in self.grid.min_y..=self.grid.max_y {
+            for x in self.grid.min_x..=self.grid.max_x {
+                let c = self.grid.get_cell_value(x, y);
+                if c.is_none() {
+                    continue;
+                }
+                let cell = c.unwrap();
+                if cell.height != 97 {
+                    continue;
+                }
+                if !cell.best_last_visited.is_none() {
+                    let cell_best = cell.best_last_visited.unwrap();
+                    if cell_best < best_score {
+                        best_score = cell_best;
+                    }
+                }
             }
-        } else {
-            cell.best_last_visualization = None;
         }
-        Some(cell)
-    })
-}
-fn print_field(grid: &Grid<HillLocation>) {
-    grid.print(|location| {
-        if location.is_none() {
-            return String::from(".");
-        }
-        let f = location.unwrap();
-        let mut visual = '.';
-        if !f.last_visualization.is_none() {
-            visual = f.last_visualization.unwrap();
-        }
-        if f.raw_char == 'E' {
-            visual = 'E';
-        }
-        if f.raw_char == 'S' {
-            visual = 'S';
-        }
-        return format!("{}", visual).to_string();
-    })
+        best_score
+    }
 }
 
-static mut BEST_SCORE: i32 = -1;
 fn move_to_start(
     grid: &mut Grid<HillLocation>,
     location: Location,
@@ -154,37 +139,22 @@ fn move_to_start(
     } else {
         return None;
     }
-    if hill_location.raw_char == 'S'
-        && (hill_location.best_last_visited.is_none()
-            || hill_location.best_last_visited.unwrap() > step_count)
-    {
-        grid.set_cell_value(location.x, location.y, hill_location.clone());
-        store_best_last_visited(grid);
-        print_field(grid);
-        // RESET FIELD
-        hill_location = grid.get_cell_value(location.x, location.y).unwrap();
-        hill_location.last_visualization = None;
-        hill_location.last_visited = None;
-        grid.set_cell_value(location.x, location.y, hill_location.clone());
-        return Some(step_count);
-    } else {
-        for direction in BASIC_DIRECTIONS.iter() {
-            let target_location = Location {
-                x: location.x + direction.x,
-                y: location.y + direction.y,
-            };
-            let other_location_raw = grid.get_cell_value(target_location.x, target_location.y);
-            if other_location_raw.is_none() {
-                continue;
-            }
-            let other_location = other_location_raw.unwrap();
-            if !other_location.can_move_to_reverse(hill_location.clone(), step_count + 1) {
-                continue;
-            }
-            hill_location.last_visualization = Some(direction.visualization);
-            grid.set_cell_value(location.x, location.y, hill_location.clone());
-            move_to_start(grid, target_location, step_count + 1);
+    for direction in BASIC_DIRECTIONS.iter() {
+        let target_location = Location {
+            x: location.x + direction.x,
+            y: location.y + direction.y,
+        };
+        let other_location_raw = grid.get_cell_value(target_location.x, target_location.y);
+        if other_location_raw.is_none() {
+            continue;
         }
+        let other_location = other_location_raw.unwrap();
+        if !other_location.can_move_to_reverse(hill_location.clone(), step_count + 1) {
+            continue;
+        }
+        hill_location.last_visualization = Some(direction.visualization);
+        grid.set_cell_value(location.x, location.y, hill_location.clone());
+        move_to_start(grid, target_location, step_count + 1);
     }
 
     // reset current mark
@@ -216,13 +186,18 @@ fn hill_height_conversion() {
 
 fn part_1(input: &str) -> usize {
     let mut hill_field = HillField::new(input);
-    unsafe { BEST_SCORE = -1 };
     hill_field.calculate_fastest_path();
     let end_field = hill_field
         .grid
         .get_cell_value(hill_field.start.x, hill_field.start.y)
         .unwrap();
     end_field.best_last_visited.unwrap() as usize
+}
+
+fn part_2(input: &str) -> usize {
+    let mut hill_field = HillField::new(input);
+    hill_field.calculate_fastest_path();
+    hill_field.get_best_start_point() as usize
 }
 
 #[test]
@@ -233,10 +208,21 @@ fn day_12_part_1_example() {
 #[test]
 fn day_12_part_1() {
     let input = include_str!("input");
-    println!("{}", part_1(input))
+    assert_eq!(part_1(input), 456);
+}
+#[test]
+fn day_12_part_2_example() {
+    let input = include_str!("input.example");
+    assert_eq!(part_2(input), 29);
+}
+#[test]
+fn day_12_part_2() {
+    let input = include_str!("input");
+    println!("{}", part_2(input));
 }
 
 fn main() {
     let raw_input_example = include_str!("input.example");
     part_1(raw_input_example);
+    part_2(raw_input_example);
 }
