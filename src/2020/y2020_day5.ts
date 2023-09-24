@@ -33,6 +33,7 @@ if (!module.parent) {
 
     async function main() {
         const lines = await FileEngine.readFileToLines(path.join(path.dirname(__filename), './data/y2020_day5.input'), false);
+        const startMs = Date.now();
         // Y2020_Day5
         const seats: {[id: number]: boolean} = {};
         let maxId = 0;
@@ -42,11 +43,13 @@ if (!module.parent) {
             seats[id] = true;
             if (id > maxId) maxId = id;
         }
+        console.log(Date.now() - startMs, 'ms')
         console.log(maxId)
         // part 2
         for (let i = 1; i < maxId; i++) {
             if (!seats[i] && seats[i - 1] && seats[i + 1] ) console.log(i);
         }
+        console.log(Date.now() - startMs, 'ms')
     }
 
     main().catch(err => console.error(err));

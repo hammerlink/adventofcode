@@ -18,6 +18,8 @@ dependencies = [
  "eval",
  "lazy_static",
  "regex",
+ "serde",
+ "serde_json",
  "substring",
 ]
 

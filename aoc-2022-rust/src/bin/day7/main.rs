@@ -78,7 +78,7 @@ fn parse_input(input: &Vec<String>) -> FileSystem {
     let lines: Vec<TerminalLine> = input.iter().map(|x| parse_terminal_line(x)).collect();
 
     let mut current_path = "/".to_string();
-    let mut tree = FileSystem::new();
+    let tree = FileSystem::new();
 
     let root = (&tree.root).clone();
     let mut current_node = root.clone();

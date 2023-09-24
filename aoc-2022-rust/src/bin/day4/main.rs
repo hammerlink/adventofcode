@@ -1,4 +1,4 @@
-use std::borrow::BorrowMut;
+
 use aoc_lib::engine::input_engine::{read_day_input, read_day_input_example};
 use regex::Regex;
 use std::collections::{BTreeMap, HashSet};
@@ -37,7 +37,7 @@ fn parse_input(input: &Vec<String>) -> Vec<ElfPair> {
 
 fn is_overlapped(pairs: &Vec<ElfPair>, elf_pair: &ElfPair) -> bool {
     if elf_pair.pair_id == 0 || elf_pair.pair_id == 1 {
-        let x = false;
+        let _x = false;
     }
     let mut elf1_overlapped = false;
     let mut elf2_overlapped = false;

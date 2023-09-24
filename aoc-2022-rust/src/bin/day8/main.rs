@@ -31,7 +31,7 @@ impl TreePatch {
     pub fn calculate_trees_visibility(mut self) -> Self {
         // top
         for x in 0..self.max_x {
-            let mut outer_top_element = self.trees.get_mut(0).unwrap().get_mut(x).unwrap();
+            let outer_top_element = self.trees.get_mut(0).unwrap().get_mut(x).unwrap();
             outer_top_element.v_top = true;
             let mut max_tree_height = outer_top_element.height;
             for y in 1..self.max_y {
@@ -46,7 +46,7 @@ impl TreePatch {
         }
         // left
         for y in 0..self.max_y {
-            let mut outer_left_tree = self.trees.get_mut(y).unwrap().get_mut(0).unwrap();
+            let outer_left_tree = self.trees.get_mut(y).unwrap().get_mut(0).unwrap();
             outer_left_tree.v_left = true;
             let mut max_tree_height = outer_left_tree.height;
             for x in 1..self.max_x {
@@ -62,7 +62,7 @@ impl TreePatch {
         }
         // bottom 
         for x in 0..self.max_x {
-            let mut outer_bottom_element = self.trees.get_mut(self.max_y - 1).unwrap().get_mut(x).unwrap();
+            let outer_bottom_element = self.trees.get_mut(self.max_y - 1).unwrap().get_mut(x).unwrap();
             outer_bottom_element.v_bottom = true;
             let mut max_tree_height = outer_bottom_element.height;
             for y in 1..self.max_y {
@@ -77,7 +77,7 @@ impl TreePatch {
         } 
         // right 
         for y in 0..self.max_y {
-            let mut outer_right_tree = self.trees.get_mut(y).unwrap().get_mut(self.max_x - 1).unwrap();
+            let outer_right_tree = self.trees.get_mut(y).unwrap().get_mut(self.max_x - 1).unwrap();
             outer_right_tree.v_right = true;
             let mut max_tree_height = outer_right_tree.height;
             for x in 1..self.max_x {
@@ -111,7 +111,7 @@ impl TreePatch {
         for x in 0..self.max_x {
             for y in 0..self.max_y {
                 if x == 2 && y == 3 {
-                    let test = true;
+                    let _test = true;
                 }
                 let score = self.calculate_view_score(x, y);                
                 if score > output { output = score; }    

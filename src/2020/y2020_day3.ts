@@ -55,6 +55,7 @@ if (!module.parent) {
     const path = require('path');
 
     async function main() {
+        const startMs = Date.now();
         const lines = await FileEngine.readFileToLines(path.join(path.dirname(__filename), './data/y2020_day3.input'));
         const originalMap = MapEngine.newMap<Y2020_Day3.TobogganPoint>();
         for (let y = 0; y < lines.length; y++) {
@@ -63,6 +64,7 @@ if (!module.parent) {
                 MapEngine.setPointInMap(originalMap, x, y, {tree: line[x] === '#'});
             }
         }
+        console.log('map created', Date.now() - startMs, 'ms');
         console.log(Y2020_Day3.stepDownSlope(originalMap, 3, 1));
         console.log(Y2020_Day3.simpleStepDownSlope(lines, 3, 1));
 
@@ -73,11 +75,13 @@ if (!module.parent) {
             Y2020_Day3.stepDownSlope(originalMap, 7, 1),
             Y2020_Day3.stepDownSlope(originalMap, 1, 2),
         ].reduce((total, value) => total * value));
+        console.log('multi slope', Date.now() - startMs, 'ms');
 
         const part2Result = [[1, 1], [3, 1], [5, 1], [7, 1], [1, 2]]
             .map(v => Y2020_Day3.simpleStepDownSlope(lines, v[0], v[1]))
             .reduce((t, v) => t * v);
         console.log(part2Result)
+        console.log(Date.now() - startMs, 'ms');
     }
 
     main().catch(err => console.error(err));

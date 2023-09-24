@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "moment": "^2.29.1",
+    "rs-lib": "file:rust-lib",
     "rxjs": "^6.5.5"
   }
 }
