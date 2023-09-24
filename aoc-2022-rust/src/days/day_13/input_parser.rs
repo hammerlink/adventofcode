@@ -1,0 +1,55 @@
+use serde_json::from_str;
+
+use super::day_13_models::{flatten_json_value, JsonValue, SignalPair};
+
+#[allow(dead_code)]
+pub fn parse_day_13_input(input: &str) -> Vec<SignalPair> {
+    let signal_lines: Vec<&str> = input.lines().filter(|line| line.len() > 0).collect();
+    signal_lines
+        .windows(2)
+        .step_by(2)
+        .map(|signal_pair| {
+            let left_parsed = from_str::<JsonValue>(signal_pair[0]).unwrap();
+            let mut left_flat: Vec<i8> = vec![];
+            flatten_json_value(&left_parsed, &mut left_flat);
+            let right_parsed = from_str::<JsonValue>(signal_pair[1]).unwrap();
+            let mut right_flat: Vec<i8> = vec![];
+            flatten_json_value(&right_parsed, &mut right_flat);
+            let mut pair = SignalPair {
+                left_parsed,
+                left_flat,
+                right_parsed,
+                right_flat,
+            };
+            pair.fix_mixed_types();
+            pair
+        })
+        .collect()
+}
+
+#[test]
+fn day_13_fix_mixed_types() {
+    let raw_input_example = include_str!("input.example");
+    let result = parse_day_13_input(raw_input_example);
+    result.into_iter().for_each(|pair| {
+        pair.print();
+    });
+    // println!("{}", result.len());
+    // assert!(result.len() == 8);
+}
+
+#[test]
+fn day_13_input() {
+    let raw_input_example = include_str!("input.example");
+    let result = parse_day_13_input(raw_input_example);
+    println!("{}", result.len());
+    assert!(result.len() == 8);
+    assert_eq!(result.get(0).unwrap().is_correct_order(), true);
+    assert_eq!(result.get(1).unwrap().is_correct_order(), true);
+    assert_eq!(result.get(2).unwrap().is_correct_order(), false);
+    assert_eq!(result.get(3).unwrap().is_correct_order(), true);
+    assert_eq!(result.get(4).unwrap().is_correct_order(), false);
+    assert_eq!(result.get(5).unwrap().is_correct_order(), true);
+    assert_eq!(result.get(6).unwrap().is_correct_order(), false);
+    assert_eq!(result.get(7).unwrap().is_correct_order(), false);
+}
