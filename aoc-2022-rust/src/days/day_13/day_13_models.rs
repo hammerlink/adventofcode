@@ -14,7 +14,8 @@ impl SignalPair {
     pub fn is_correct_order(&self) -> bool {
         let raw = compare_distress_signals(&self.left_parsed, &self.right_parsed);
         if raw.is_none() {
-            return true;
+            println!("undecided");
+            return false;
         }
         return raw.unwrap();
     }
@@ -70,7 +71,10 @@ fn fix_mixed_types(left: JsonValue, right: JsonValue) -> (JsonValue, JsonValue) 
     for i in 0..max_len {
         // out of bounds, no longer necessary to fix mix types
         if i >= left_len || i >= right_len {
-            return (JsonValue::Array(left_list), JsonValue::Array(right_list));
+            return (
+                JsonValue::Array(left_list),
+                JsonValue::Array(right_list),
+            );
         }
         let left_item = mem::replace(&mut left_list[i], JsonValue::Number(0));
         let right_item = mem::replace(&mut right_list[i], JsonValue::Number(0));
@@ -79,7 +83,10 @@ fn fix_mixed_types(left: JsonValue, right: JsonValue) -> (JsonValue, JsonValue) 
         left_list[i] = fixed_couple.0;
         right_list[i] = fixed_couple.1;
     }
-    (JsonValue::Array(left_list), JsonValue::Array(right_list))
+    (
+        JsonValue::Array(left_list),
+        JsonValue::Array(right_list),
+    )
 }
 
 fn compare_distress_signals(left: &JsonValue, right: &JsonValue) -> Option<bool> {
@@ -109,7 +116,7 @@ fn compare_distress_signals(left: &JsonValue, right: &JsonValue) -> Option<bool>
             return compare;
         }
     }
-    Some(true)
+    None
 }
 
 pub fn flatten_json_value(json_value: &JsonValue, result: &mut Vec<i8>) {
