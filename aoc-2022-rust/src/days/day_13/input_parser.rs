@@ -1,6 +1,7 @@
 use serde_json::from_str;
 
-use super::day_13_models::{flatten_json_value, JsonValue, SignalPair};
+use super::{signal_pair::SignalPair, signal_value::SignalValue};
+
 
 #[allow(dead_code)]
 pub fn parse_day_13_input(input: &str) -> Vec<SignalPair> {
@@ -9,19 +10,12 @@ pub fn parse_day_13_input(input: &str) -> Vec<SignalPair> {
         .windows(2)
         .step_by(2)
         .map(|signal_pair| {
-            let left_parsed = from_str::<JsonValue>(signal_pair[0]).unwrap();
-            let mut left_flat: Vec<i8> = vec![];
-            flatten_json_value(&left_parsed, &mut left_flat);
-            let right_parsed = from_str::<JsonValue>(signal_pair[1]).unwrap();
-            let mut right_flat: Vec<i8> = vec![];
-            flatten_json_value(&right_parsed, &mut right_flat);
+            let left_parsed = from_str::<SignalValue>(signal_pair[0]).unwrap();
+            let right_parsed = from_str::<SignalValue>(signal_pair[1]).unwrap();
             let mut pair = SignalPair {
                 left_parsed,
-                left_flat,
                 right_parsed,
-                right_flat,
             };
-            pair.fix_mixed_types();
             pair
         })
         .collect()

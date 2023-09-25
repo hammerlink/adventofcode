@@ -28,7 +28,9 @@ fn day_12_part_1() {
     let result = part_1(input);
     println!("{}", result);
     assert!(result < 5545, "too many trues, more cases should fail");
-    // assert_eq!(part_1(input), 456);
+    assert!(result > 3000, "guess attempt, should be higher then 3000");
+    assert!(result > 4500, "guess attempt, should be higher then 3000");
+    assert_eq!(part_1(input), 5198);
 }
 #[test]
 fn day_12_part_2_example() {
