@@ -1,12 +1,11 @@
-use std::cmp::{self, Ordering};
+use std::cmp::Ordering;
 
-use super::signal_value::{SignalProcessing, SignalValue, compare_signal_pair};
+use super::signal_value::{compare_signal_pair, SignalValue};
 
 pub struct SignalPair {
     pub left_parsed: SignalValue,
     pub right_parsed: SignalValue,
 }
-
 
 impl SignalPair {
     #[allow(dead_code)]
@@ -16,11 +15,5 @@ impl SignalPair {
             return true;
         }
         return false;
-    }
-
-    pub fn print(&self) {
-        let left_string = serde_json::to_string(&self.left_parsed).unwrap();
-        println!("{}", left_string);
-        println!("{}", serde_json::to_string(&self.right_parsed).unwrap());
     }
 }

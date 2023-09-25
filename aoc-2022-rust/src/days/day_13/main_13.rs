@@ -1,4 +1,9 @@
-use super::input_parser::parse_day_13_input;
+use crate::days::day_13::signal_value::SignalProcessing;
+
+use super::{
+    input_parser::{parse_day_13_input, parse_input_part_2},
+    signal_value::{compare_signal_pair, SignalValue},
+};
 
 #[allow(dead_code)]
 fn part_1(input: &str) -> isize {
@@ -12,8 +17,37 @@ fn part_1(input: &str) -> isize {
     counter
 }
 #[allow(dead_code)]
-fn part_2(_input: &str) -> isize {
-    0
+fn part_2(input: &str) -> usize {
+    let mut list = parse_input_part_2(input);
+    list.push(SignalValue::Array(vec![SignalValue::Array(vec![
+        SignalValue::Number(2),
+    ])]));
+    list.push(SignalValue::Array(vec![SignalValue::Array(vec![
+        SignalValue::Number(6),
+    ])]));
+    list.sort_by(|left, right| compare_signal_pair(left, right));
+    let mut index_2: Option<usize> = None;
+    let mut index_6: Option<usize> = None;
+    for (i, ele) in list.into_iter().enumerate() {
+        if !ele.is_num_value() {
+            let list_1 = ele.borrow_list().unwrap();
+            if list_1.len() != 1 || list_1[0].is_num_value() {
+                continue;
+            }
+            let list_2 = list_1[0].borrow_list().unwrap();
+            if list_2.len() != 1 || !list_2[0].is_num_value() {
+                continue;
+            }
+            let value = list_2[0].to_value().unwrap();
+            if value == 2 {
+                index_2 = Some(i + 1);
+            }
+            if value == 6 {
+                index_6 = Some(i + 1);
+            }
+        }
+    }
+    index_2.unwrap() * index_6.unwrap()
 }
 
 #[test]
@@ -35,10 +69,11 @@ fn day_12_part_1() {
 #[test]
 fn day_12_part_2_example() {
     let input = include_str!("input.example");
-    assert_eq!(part_2(input), 29);
+    assert_eq!(part_2(input), 140);
 }
 #[test]
 fn day_12_part_2() {
     let input = include_str!("input");
     println!("{}", part_2(input));
+    assert_eq!(part_2(input), 22344);
 }

@@ -77,6 +77,7 @@ pub trait SignalProcessing {
     fn is_same_type(&self, other: &SignalValue) -> bool;
     fn index_of(&self, element: &SignalValue) -> isize;
     fn set_element(&mut self, element: SignalValue, index: isize);
+    fn print(&self);
 }
 
 impl SignalProcessing for SignalValue {
@@ -112,7 +113,7 @@ impl SignalProcessing for SignalValue {
 
     fn is_num_value(&self) -> bool {
         match self {
-            SignalValue::Number(v) => true,
+            SignalValue::Number(_) => true,
             _ => false,
         }
     }
@@ -138,6 +139,10 @@ impl SignalProcessing for SignalValue {
             SignalValue::Array(v) => Some(v),
             _ => None,
         }
+    }
+
+    fn print(&self) {
+        println!("{}", serde_json::to_string(&self).unwrap());
     }
 }
 

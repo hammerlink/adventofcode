@@ -2,7 +2,6 @@ use serde_json::from_str;
 
 use super::{signal_pair::SignalPair, signal_value::SignalValue};
 
-
 #[allow(dead_code)]
 pub fn parse_day_13_input(input: &str) -> Vec<SignalPair> {
     let signal_lines: Vec<&str> = input.lines().filter(|line| line.len() > 0).collect();
@@ -18,6 +17,14 @@ pub fn parse_day_13_input(input: &str) -> Vec<SignalPair> {
             };
             pair
         })
+        .collect()
+}
+
+pub fn parse_input_part_2(input: &str) -> Vec<SignalValue> {
+    input
+        .lines()
+        .filter(|line| line.len() > 0)
+        .map(|line| from_str::<SignalValue>(line).unwrap())
         .collect()
 }
 
