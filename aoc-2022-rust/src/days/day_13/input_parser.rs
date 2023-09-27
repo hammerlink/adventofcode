@@ -4,18 +4,17 @@ use super::{signal_pair::SignalPair, signal_value::SignalValue};
 
 #[allow(dead_code)]
 pub fn parse_day_13_input(input: &str) -> Vec<SignalPair> {
-    let signal_lines: Vec<&str> = input.lines().filter(|line| line.len() > 0).collect();
+    let signal_lines: Vec<&str> = input.lines().filter(|line| !line.is_empty()).collect();
     signal_lines
         .windows(2)
         .step_by(2)
         .map(|signal_pair| {
             let left_parsed = from_str::<SignalValue>(signal_pair[0]).unwrap();
             let right_parsed = from_str::<SignalValue>(signal_pair[1]).unwrap();
-            let mut pair = SignalPair {
+            SignalPair {
                 left_parsed,
                 right_parsed,
-            };
-            pair
+            }
         })
         .collect()
 }
@@ -23,7 +22,7 @@ pub fn parse_day_13_input(input: &str) -> Vec<SignalPair> {
 pub fn parse_input_part_2(input: &str) -> Vec<SignalValue> {
     input
         .lines()
-        .filter(|line| line.len() > 0)
+        .filter(|line| !line.is_empty())
         .map(|line| from_str::<SignalValue>(line).unwrap())
         .collect()
 }
@@ -33,7 +32,9 @@ fn day_13_fix_mixed_types() {
     let raw_input_example = include_str!("input.example");
     let result = parse_day_13_input(raw_input_example);
     result.into_iter().for_each(|pair| {
-        pair.print();
+        // pair.print();
+        // instead of adding a pritn method, implement a `Display` trait for the signal_pair & signal_value; and you can simply
+        // invoke the println!(...) with pair as an argument
     });
     // println!("{}", result.len());
     // assert!(result.len() == 8);
@@ -45,6 +46,8 @@ fn day_13_input() {
     let result = parse_day_13_input(raw_input_example);
     println!("{}", result.len());
     assert!(result.len() == 8);
+
+    // Use assert! or assert_ne!() instead of assert_eq!(..., true) / assert_eq!(..., false)
     assert_eq!(result.get(0).unwrap().is_correct_order(), true);
     assert_eq!(result.get(1).unwrap().is_correct_order(), true);
     assert_eq!(result.get(2).unwrap().is_correct_order(), false);
