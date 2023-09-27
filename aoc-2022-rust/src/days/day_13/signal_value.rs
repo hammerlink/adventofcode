@@ -9,22 +9,35 @@ pub enum SignalValue {
     Array(Vec<SignalValue>),
 }
 
+// Implement display for SignalValue
+
 #[allow(dead_code)]
 pub fn compare_signal_pair(left_raw: &SignalValue, right_raw: &SignalValue) -> Ordering {
     let left_first = is_left_first(left_raw.clone(), right_raw.clone());
-    if left_first.is_some() {
-        let value = left_first.unwrap();
-        if value {
-            return Ordering::Less;
-        }
-        return Ordering::Greater;
+    // using unwrap is not necessary here. Instead:
+    match left_first {
+        Some(value) => match value {
+            true => Ordering::Less,
+            false => Ordering::Greater,
+        },
+        None => Ordering::Equal,
     }
-    Ordering::Equal
 }
 
 fn is_left_first(left: SignalValue, right: SignalValue) -> Option<bool> {
+    // Pass signal values as mutable ref instead of initializing them as a new mutable variable
+    // Ignoring the first comment, I don't see a place where you are modifying the values, so why declare them as mutable?
     let mut left = left;
     let mut right = right;
+
+    // Creating an is_num_value_or_none function would avoid a lot of unwraps in this entire
+    // function
+    //match (left.num_value_or_none(), right.num_value_or_none()) {
+    //    Some(a), Some(b) => ...,
+    //    Some(a), None => ...,
+    //    None, None => ...,
+    //}
+
     let is_left_num = left.is_num_value();
     let is_right_num = right.is_num_value();
 
@@ -36,15 +49,23 @@ fn is_left_first(left: SignalValue, right: SignalValue) -> Option<bool> {
         } else if left_value > right_value {
             return Some(false);
         }
-        return None;
     }
 
+    // Using unwrap this much is really bad practice
+    // The program will crash with any unexpected value (what if I have is_left_num set to true, while the left
+    // variable doesn't have a value? => the program crashes)
+    // Instead, you should make use of Result types or Option types more, or avoid unwrapping by
+    // using the method I described at the top of this function (method does not build yet, I haven't
+    // finished it)
     if is_left_num {
         left = SignalValue::Array(vec![SignalValue::Number(left.to_value().unwrap())]);
     } else if is_right_num {
         right = SignalValue::Array(vec![SignalValue::Number(right.to_value().unwrap())])
     }
 
+    // Again here: program will crash if the list is empty
+    // Maybe let the borrow_list function return an empty list instead of using an option?
+    // Or create a borrow_list_len() function that returns 0 if list doesn't exist?
     let left_list = left.borrow_list().unwrap();
     let right_list = right.borrow_list().unwrap();
     let left_len = left_list.len();
@@ -59,6 +80,8 @@ fn is_left_first(left: SignalValue, right: SignalValue) -> Option<bool> {
             return Some(false);
         }
 
+        // Same comment here as at the top of this function: I think you can pass references to
+        // this function instead of cloning them
         let is_index_left_first = is_left_first(left_list[i].clone(), right_list[i].clone());
         if is_index_left_first.is_some() {
             return is_index_left_first;
@@ -68,6 +91,11 @@ fn is_left_first(left: SignalValue, right: SignalValue) -> Option<bool> {
     None
 }
 
+// A trait generally defines some kind of behavior for a struct (e.g. the Display trait defines
+// how an object should be displayed in a string format, and the Clone trait defines how an object
+// should be cloned)
+// In that regard, I cannot really tell from the naming and/or the set of functions which behavior is
+// defined with this trait
 pub trait SignalProcessing {
     fn borrow_list(&self) -> Option<&Vec<SignalValue>>;
     fn borrow_mut_list(&mut self) -> Option<&mut Vec<SignalValue>>;
@@ -78,9 +106,17 @@ pub trait SignalProcessing {
     fn index_of(&self, element: &SignalValue) -> isize;
     fn set_element(&mut self, element: SignalValue, index: isize);
     fn print(&self);
+    fn num_value_or_none(&self) -> Option<i8>;
 }
 
 impl SignalProcessing for SignalValue {
+    fn num_value_or_none(&self) -> Option<i8> {
+        match self {
+            SignalValue::Number(n) => Some(*n),
+            _ => None,
+        }
+    }
+
     fn borrow_list(&self) -> Option<&Vec<SignalValue>> {
         self.is_num_value();
         match self {
@@ -109,6 +145,8 @@ impl SignalProcessing for SignalValue {
             (SignalValue::Array(_), SignalValue::Array(_)) => true,
             _ => false,
         }
+        // This would be easier:
+        // matches!((self, other), (SignalValue::Number(_), SignalValue::Number(_)) | (SignalValue::Array(_), SignalValue::Array(_)))
     }
 
     fn is_num_value(&self) -> bool {
@@ -116,20 +154,29 @@ impl SignalProcessing for SignalValue {
             SignalValue::Number(_) => true,
             _ => false,
         }
+        // This would be easier:
+        // matches!(self, SignalValue::Number(_))
     }
 
+    // Returning an option instead of -1 here would make more sense in my opinion
     fn index_of(&self, element: &SignalValue) -> isize {
         let list = self.borrow_list().unwrap();
+
+        // https://stackoverflow.com/a/37482592
+        // let res = list.iter().position(|s| std::ptr::eq(s, element));
         for (index, list_element) in list.into_iter().enumerate() {
             if std::ptr::eq(list_element, element) {
                 return index as isize;
             }
         }
         return -1;
+        // in this case, just typing "-1" is the same as "return -1;"
     }
 
+    // An isize as index does not really make sense I think
     fn set_element(&mut self, element: SignalValue, index: isize) {
         let list = self.borrow_mut_list().unwrap();
+        // What if the index doesn't exist in the list? => panic
         list[index as usize] = element;
     }
 
@@ -141,6 +188,7 @@ impl SignalProcessing for SignalValue {
         }
     }
 
+    // Implement the Display trait instead of writing a custom function
     fn print(&self) {
         println!("{}", serde_json::to_string(&self).unwrap());
     }
