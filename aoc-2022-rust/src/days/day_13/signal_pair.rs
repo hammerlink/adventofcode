@@ -10,10 +10,9 @@ pub struct SignalPair {
 impl SignalPair {
     #[allow(dead_code)]
     pub fn is_correct_order(&self) -> bool {
-        let comparison = compare_signal_pair(&self.left_parsed, &self.right_parsed);
-        if comparison == Ordering::Less {
-            return true;
+        match compare_signal_pair(&self.left_parsed, &self.right_parsed) {
+            Ordering::Less => true,
+            _ => false,
         }
-        false
     }
 }

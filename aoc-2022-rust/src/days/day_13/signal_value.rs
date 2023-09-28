@@ -12,14 +12,13 @@ pub enum SignalValue {
 #[allow(dead_code)]
 pub fn compare_signal_pair(left_raw: &SignalValue, right_raw: &SignalValue) -> Ordering {
     let left_first = is_left_first(left_raw.clone(), right_raw.clone());
-    if left_first.is_some() {
-        let value = left_first.unwrap();
-        if value {
-            return Ordering::Less;
-        }
-        return Ordering::Greater;
+    match left_first {
+        Some(value) => match value {
+            true => Ordering::Less,
+            false => Ordering::Greater,
+        },
+        None => Ordering::Equal,
     }
-    Ordering::Equal
 }
 
 fn is_left_first(left: SignalValue, right: SignalValue) -> Option<bool> {
