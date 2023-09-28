@@ -11,7 +11,7 @@ pub fn parse_day_13_input(input: &str) -> Vec<SignalPair> {
         .map(|signal_pair| {
             let left_parsed = from_str::<SignalValue>(signal_pair[0]).unwrap();
             let right_parsed = from_str::<SignalValue>(signal_pair[1]).unwrap();
-            
+
             SignalPair {
                 left_parsed,
                 right_parsed,
@@ -29,28 +29,17 @@ pub fn parse_input_part_2(input: &str) -> Vec<SignalValue> {
 }
 
 #[test]
-fn day_13_fix_mixed_types() {
-    let raw_input_example = include_str!("input.example");
-    let result = parse_day_13_input(raw_input_example);
-    result.into_iter().for_each(|pair| {
-        pair.print();
-    });
-    // println!("{}", result.len());
-    // assert!(result.len() == 8);
-}
-
-#[test]
 fn day_13_input() {
     let raw_input_example = include_str!("input.example");
     let result = parse_day_13_input(raw_input_example);
     println!("{}", result.len());
     assert!(result.len() == 8);
-    assert_eq!(result.get(0).unwrap().is_correct_order(), true);
-    assert_eq!(result.get(1).unwrap().is_correct_order(), true);
-    assert_eq!(result.get(2).unwrap().is_correct_order(), false);
-    assert_eq!(result.get(3).unwrap().is_correct_order(), true);
-    assert_eq!(result.get(4).unwrap().is_correct_order(), false);
-    assert_eq!(result.get(5).unwrap().is_correct_order(), true);
-    assert_eq!(result.get(6).unwrap().is_correct_order(), false);
-    assert_eq!(result.get(7).unwrap().is_correct_order(), false);
+    assert!(result.get(0).unwrap().is_correct_order());
+    assert!(result.get(1).unwrap().is_correct_order());
+    assert!(!result.get(2).unwrap().is_correct_order());
+    assert!(result.get(3).unwrap().is_correct_order());
+    assert!(!result.get(4).unwrap().is_correct_order());
+    assert!(result.get(5).unwrap().is_correct_order());
+    assert!(!result.get(6).unwrap().is_correct_order());
+    assert!(!result.get(7).unwrap().is_correct_order());
 }

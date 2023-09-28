@@ -78,6 +78,7 @@ pub trait SignalProcessing {
     fn index_of(&self, element: &SignalValue) -> isize;
     fn set_element(&mut self, element: SignalValue, index: isize);
     fn print(&self);
+    fn is_equal(&self, other: &SignalValue, print: Option<bool>) -> bool;
 }
 
 impl SignalProcessing for SignalValue {
@@ -144,6 +145,35 @@ impl SignalProcessing for SignalValue {
     fn print(&self) {
         println!("{}", serde_json::to_string(&self).unwrap());
     }
+    fn is_equal(&self, other: &SignalValue, print: Option<bool>) -> bool {
+        if print.is_some() {
+            self.print();
+            other.print();
+        }
+        let is_same_type = self.is_same_type(other);
+        if !is_same_type {
+            return false;
+        }
+
+        let is_num_value = self.is_num_value();
+        if is_num_value {
+            return self.to_value() == other.to_value();
+        } else {
+            let self_list = self.borrow_list().unwrap();
+            let other_list = other.borrow_list().unwrap();
+            if self_list.len() != other_list.len() {
+                return false;
+            }
+            for i in 0..self_list.len() {
+                let is_equal = &self_list[i].is_equal(&other_list[i], None);
+                if !is_equal {
+                    return false;
+                }
+            }
+        }
+
+        true
+    }
 }
 
 #[test]
@@ -152,4 +182,14 @@ fn signal_index_of() {
         SignalValue::Array(vec![SignalValue::Number(1), SignalValue::Number(2)]);
     let list = signal.borrow_list().unwrap();
     assert!(signal.index_of(&list[1]) == 1);
+}
+
+#[test]
+fn signal_is_equal() {
+    let signal: SignalValue =
+        SignalValue::Array(vec![SignalValue::Number(1), SignalValue::Number(2)]);
+    let empty = SignalValue::Array(vec![]);
+    assert!(!signal.is_equal(&empty, None));
+    let clone = signal.clone();
+    assert!(signal.is_equal(&clone, None));
 }

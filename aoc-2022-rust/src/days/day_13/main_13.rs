@@ -1,8 +1,8 @@
-use crate::days::day_13::signal_value::SignalProcessing;
+use crate::days::day_13::signal_value::SignalValue;
 
 use super::{
     input_parser::{parse_day_13_input, parse_input_part_2},
-    signal_value::{compare_signal_pair, SignalValue},
+    signal_value::{compare_signal_pair, SignalProcessing},
 };
 
 #[allow(dead_code)]
@@ -19,35 +19,22 @@ fn part_1(input: &str) -> isize {
 #[allow(dead_code)]
 fn part_2(input: &str) -> usize {
     let mut list = parse_input_part_2(input);
-    list.push(SignalValue::Array(vec![SignalValue::Array(vec![
-        SignalValue::Number(2),
-    ])]));
-    list.push(SignalValue::Array(vec![SignalValue::Array(vec![
-        SignalValue::Number(6),
-    ])]));
+    let extra_element_2 =
+        SignalValue::Array(vec![SignalValue::Array(vec![SignalValue::Number(2)])]);
+    let extra_element_6 =
+        SignalValue::Array(vec![SignalValue::Array(vec![SignalValue::Number(6)])]);
+    list.push(extra_element_2.clone());
+    list.push(extra_element_6.clone());
     list.sort_by(compare_signal_pair);
-    let mut index_2: Option<usize> = None;
-    let mut index_6: Option<usize> = None;
-    for (i, ele) in list.into_iter().enumerate() {
-        if !ele.is_num_value() {
-            let list_1 = ele.borrow_list().unwrap();
-            if list_1.len() != 1 || list_1[0].is_num_value() {
-                continue;
-            }
-            let list_2 = list_1[0].borrow_list().unwrap();
-            if list_2.len() != 1 || !list_2[0].is_num_value() {
-                continue;
-            }
-            let value = list_2[0].to_value().unwrap();
-            if value == 2 {
-                index_2 = Some(i + 1);
-            }
-            if value == 6 {
-                index_6 = Some(i + 1);
-            }
-        }
-    }
-    index_2.unwrap() * index_6.unwrap()
+    let index_2 = list
+        .iter()
+        .position(|ele| ele.is_equal(&extra_element_2, None))
+        .unwrap();
+    let index_6 = list
+        .iter()
+        .position(|ele| ele.is_equal(&extra_element_6, None))
+        .unwrap();
+    (index_2 + 1) * (index_6 + 1)
 }
 
 #[test]
@@ -61,9 +48,6 @@ fn day_12_part_1() {
     let input = include_str!("input");
     let result = part_1(input);
     println!("{}", result);
-    assert!(result < 5545, "too many trues, more cases should fail");
-    assert!(result > 3000, "guess attempt, should be higher then 3000");
-    assert!(result > 4500, "guess attempt, should be higher then 3000");
     assert_eq!(part_1(input), 5198);
 }
 #[test]
