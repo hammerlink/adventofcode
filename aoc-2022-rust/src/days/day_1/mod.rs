@@ -7,7 +7,7 @@ struct Elf {
 
 fn parse_input(input_path: &str) -> Vec<Elf> {
     let contents = fs::read_to_string(input_path).expect("Should have been able to read the file");
-    let raw_input: Vec<&str> = contents.split("\n").collect();
+    let raw_input: Vec<&str> = contents.split('\n').collect();
 
     let mut elves: Vec<Elf> = Vec::new();
     let mut current_elf: Elf = Elf { food: 0 };
@@ -27,7 +27,7 @@ fn parse_input(input_path: &str) -> Vec<Elf> {
         }
     }
     println!("Largest carried total food: {}", largest_total_food);
-    return elves;
+    elves
 }
 
 fn calculate_top_tree_total(elves: &mut Vec<Elf>) {
@@ -35,7 +35,7 @@ fn calculate_top_tree_total(elves: &mut Vec<Elf>) {
 
     let top_tree = &elves[0..3];
     let total = top_tree
-        .into_iter()
+        .iter()
         .fold(0, |total, value| total + value.food);
 
     println!("total food of top tree: {}", total);
@@ -48,10 +48,10 @@ fn main() {
 
     // input_path.len()
     println!("Part 1 - example input");
-    let mut elves_example = parse_input(&input_example_path);
+    let mut elves_example = parse_input(input_example_path);
 
     println!("Part 1 - input");
-    let mut elves = parse_input(&input_path);
+    let mut elves = parse_input(input_path);
 
     println!("Part 2 - example input");
     calculate_top_tree_total(&mut elves_example);

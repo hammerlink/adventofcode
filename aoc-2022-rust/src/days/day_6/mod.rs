@@ -5,7 +5,7 @@ fn part_1(input: &Vec<String>) {
     let result = input.index(0);
     let mut fragment: Vec<char> = Vec::new();
     let mut parsed: usize = 0;
-    for (i, c) in result.chars().into_iter().enumerate() {
+    for (i, c) in result.chars().enumerate() {
         if fragment.contains(&c) {
             fragment = Vec::new();
         }
@@ -42,8 +42,8 @@ fn is_start_of_message_marker(piece: &str) -> bool {
 #[allow(dead_code)]
 fn main() {
     let day_name = file!();
-    let input = read_day_input(&day_name);
-    let example_input = read_day_input_example(&day_name);
+    let input = read_day_input(day_name);
+    let example_input = read_day_input_example(day_name);
 
     println!("Part 1 - example input");
     part_1(&example_input);

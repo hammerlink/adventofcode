@@ -11,7 +11,7 @@ struct RuckSack {
 fn parse_input(input: &Vec<String>) -> Vec<RuckSack> {
     input
         .iter()
-        .map(|x| convert_raw_line_to_ruck_sack(x))
+        .map(convert_raw_line_to_ruck_sack)
         .collect()
 }
 
@@ -35,7 +35,7 @@ fn split_line_in_half(input: &String) -> (&str, &str) {
 fn convert_ruck_sack_line(input: &str) -> Vec<u32> {
     input
         .chars()
-        .map(|x| convert_rucksack_char_to_priority(x))
+        .map(convert_rucksack_char_to_priority)
         .collect()
 }
 
@@ -44,7 +44,7 @@ fn convert_rucksack_char_to_priority(input: char) -> u32 {
     if value >= 97 {
         return value - 96;
     }
-    return value - (65 - 27);
+    value - (65 - 27)
 }
 
 fn find_wrong_rucksack_item(rucksack: &RuckSack) -> u32 {
@@ -53,22 +53,21 @@ fn find_wrong_rucksack_item(rucksack: &RuckSack) -> u32 {
         .iter()
         .filter(|x| rucksack.compartment_2.contains(x))
         .collect();
-    if compartment1_matches.len() > 0 {
-        return compartment1_matches[0].clone();
+    if !compartment1_matches.is_empty() {
+        return *compartment1_matches[0];
     }
-    rucksack
+    *rucksack
         .compartment_2
         .iter()
         .find(|x| rucksack.compartment_1.contains(x))
         .unwrap()
-        .clone()
 }
 
 fn part_1(input: &Vec<String>) {
     let result = parse_input(input)
         .iter()
-        .map(|x| find_wrong_rucksack_item(x))
-        .fold(0, |total, value| total + value);
+        .map(find_wrong_rucksack_item)
+        .sum::<u32>();
 
     println!("{}", result)
 }
@@ -79,12 +78,12 @@ fn find_shared_priority(input: &Vec<RuckSack>) -> u32 {
         if i == 0 {
             for c_type in ruck_sack.compartment_1.iter() {
                 if !remaining_prios.contains(c_type) {
-                    remaining_prios.push(c_type.clone());
+                    remaining_prios.push(*c_type);
                 }
             }
             for c_type in ruck_sack.compartment_2.iter() {
                 if !remaining_prios.contains(c_type) {
-                    remaining_prios.push(c_type.clone());
+                    remaining_prios.push(*c_type);
                 }
             }
             continue;
@@ -98,7 +97,7 @@ fn find_shared_priority(input: &Vec<RuckSack>) -> u32 {
         });
     }
     assert_eq!(remaining_prios.len(), 1);
-    return remaining_prios[0];
+    remaining_prios[0]
 }
 
 fn part_2(input: &Vec<String>) {
@@ -120,8 +119,8 @@ fn part_2(input: &Vec<String>) {
 #[allow(dead_code)]
 pub fn main() {
     let day_name = file!();
-    let input = read_day_input(&day_name);
-    let example_input = read_day_input_example(&day_name);
+    let input = read_day_input(day_name);
+    let example_input = read_day_input_example(day_name);
 
     println!("Part 1 - example input");
     part_1(&example_input);

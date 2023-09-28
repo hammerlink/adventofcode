@@ -14,6 +14,6 @@ impl SignalPair {
         if comparison == Ordering::Less {
             return true;
         }
-        return false;
+        false
     }
 }

@@ -25,7 +25,7 @@ fn part_2(input: &str) -> usize {
     list.push(SignalValue::Array(vec![SignalValue::Array(vec![
         SignalValue::Number(6),
     ])]));
-    list.sort_by(|left, right| compare_signal_pair(left, right));
+    list.sort_by(compare_signal_pair);
     let mut index_2: Option<usize> = None;
     let mut index_6: Option<usize> = None;
     for (i, ele) in list.into_iter().enumerate() {

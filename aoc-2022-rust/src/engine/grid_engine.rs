@@ -129,9 +129,7 @@ impl<T: Clone> Grid<T> {
 
     pub fn get_cell_value(&self, x: isize, y: isize) -> Option<T> {
         let cell = self.get_cell(x, y);
-        if cell.is_none() {
-            return None;
-        }
+        cell.as_ref()?;
         Some(self.get_cell(x, y).unwrap().as_ref().borrow().value.clone())
     }
 
@@ -160,9 +158,7 @@ impl<T: Clone> Grid<T> {
         let mut map: GridMap<T> = HashMap::new();
         for (y, line) in lines.iter().enumerate() {
             max_y = min_y + y as isize;
-            if !map.contains_key(&(y as isize)) {
-                map.insert(y as isize, HashMap::new());
-            }
+            map.entry(y as isize).or_insert_with(HashMap::new);
             let parsed_values = parse_line(line.clone());
             for (_x, _value) in parsed_values.into_iter().enumerate() {}
         }

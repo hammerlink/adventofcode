@@ -120,12 +120,12 @@ impl SignalProcessing for SignalValue {
 
     fn index_of(&self, element: &SignalValue) -> isize {
         let list = self.borrow_list().unwrap();
-        for (index, list_element) in list.into_iter().enumerate() {
+        for (index, list_element) in list.iter().enumerate() {
             if std::ptr::eq(list_element, element) {
                 return index as isize;
             }
         }
-        return -1;
+        -1
     }
 
     fn set_element(&mut self, element: SignalValue, index: isize) {

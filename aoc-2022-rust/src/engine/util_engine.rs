@@ -3,5 +3,5 @@ pub fn print_fixed_length_number(input: isize, size: usize) -> String {
     while output.len() < size {
         output = format!("{}{}", ' ', output);
     }
-    return output;
+    output
 }

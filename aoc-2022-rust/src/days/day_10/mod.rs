@@ -21,8 +21,8 @@ struct Command {
 
 impl Command {
     pub fn new(line: String) -> Self {
-        let pieces: Vec<&str> = line.split(" ").collect();
-        let command = pieces.get(0).unwrap().to_string();
+        let pieces: Vec<&str> = line.split(' ').collect();
+        let command = pieces.first().unwrap().to_string();
         if command == "noop" {
             return Command {
                 command,
@@ -34,8 +34,8 @@ impl Command {
             value: Some(
                 isize::from_str_radix(
                     {
-                        let ref this = pieces.get(1).unwrap();
-                        *this
+                        let this = pieces.get(1).unwrap();
+                        this
                     },
                     10,
                 )
@@ -83,7 +83,7 @@ fn parse_input(input: &Vec<String>) -> Vec<Command> {
 
 fn execute_cycle_trigger(cycle_trigger: &usize, tube_value: &isize) -> isize {
     println!("cycle {} tube {} - command", cycle_trigger, tube_value);
-    tube_value.clone() * (cycle_trigger.clone() as isize)
+    *tube_value * (*cycle_trigger as isize)
 }
 
 fn part_1(input: &Vec<String>) {
@@ -94,8 +94,8 @@ fn part_1(input: &Vec<String>) {
     let mut check_trigger = true;
     let mut result: isize = 0;
     for (_i, command) in parse_input(input).iter().enumerate() {
-        let previous_value = cathode.tube_value.clone();
-        let _started = cathode.cycle_counter.clone();
+        let previous_value = cathode.tube_value;
+        let _started = cathode.cycle_counter;
         cathode = execute_command(cathode, command);
         if check_trigger && cathode.cycle_counter >= next_cycle_trigger {
             if cathode.cycle_counter == next_cycle_trigger {
@@ -104,7 +104,7 @@ fn part_1(input: &Vec<String>) {
                 result += execute_cycle_trigger(&next_cycle_trigger, &previous_value);
             }
 
-            if cycle_triggers.len() > 0 {
+            if !cycle_triggers.is_empty() {
                 next_cycle_trigger = cycle_triggers.pop().unwrap();
             } else {
                 check_trigger = false;
@@ -134,7 +134,7 @@ fn print_cycle_on_visual(
     cycle: &usize,
 ) -> [bool; 40] {
     let mut output = cycle_visual;
-    let current_cycle = cycle.clone() % 40;
+    let current_cycle = *cycle % 40;
     let mut start: usize = 0;
     if current_cycle > 0 {
         start = current_cycle - 1;
@@ -143,7 +143,7 @@ fn print_cycle_on_visual(
         if i > 39 {
             continue;
         }
-        output[i] = (tube_value.clone() - (i as isize)).abs() <= 1;
+        output[i] = (*tube_value - (i as isize)).abs() <= 1;
     }
     output
 }
@@ -162,28 +162,24 @@ fn part_2(input: &Vec<String>) {
     let mut next_cycle_trigger = cycle_triggers.pop().unwrap();
     let mut next_cycle_line = get_cycle_visual();
     for (_i, command) in parse_input(input).iter().enumerate() {
-        let previous_value = cathode.tube_value.clone();
+        let previous_value = cathode.tube_value;
         let current_command = command.command.clone();
-        let started = cathode.cycle_counter.clone();
+        let started = cathode.cycle_counter;
         cathode = execute_command(cathode, command);
         // print tube on cycle
         if current_command == "addx" {
-            if (started + 1) >= next_cycle_trigger {
-                if cycle_triggers.len() > 0 {
-                    next_cycle_trigger = cycle_triggers.pop().unwrap();
-                    print_cycle_visual(&next_cycle_line);
-                    next_cycle_line = get_cycle_visual();
-                }
-            }
-            next_cycle_line =
-                print_cycle_on_visual(next_cycle_line, &previous_value, &(started + 1));
-        }
-        if cathode.cycle_counter >= next_cycle_trigger {
-            if cycle_triggers.len() > 0 {
+            if (started + 1) >= next_cycle_trigger && !cycle_triggers.is_empty() {
                 next_cycle_trigger = cycle_triggers.pop().unwrap();
                 print_cycle_visual(&next_cycle_line);
                 next_cycle_line = get_cycle_visual();
             }
+            next_cycle_line =
+                print_cycle_on_visual(next_cycle_line, &previous_value, &(started + 1));
+        }
+        if cathode.cycle_counter >= next_cycle_trigger && !cycle_triggers.is_empty() {
+            next_cycle_trigger = cycle_triggers.pop().unwrap();
+            print_cycle_visual(&next_cycle_line);
+            next_cycle_line = get_cycle_visual();
         }
         next_cycle_line =
             print_cycle_on_visual(next_cycle_line, &cathode.tube_value, &cathode.cycle_counter);
@@ -194,8 +190,8 @@ fn part_2(input: &Vec<String>) {
 #[allow(dead_code)]
 fn main() {
     let day_name = file!();
-    let input = read_day_input(&day_name);
-    let example_input = read_day_input_example(&day_name);
+    let input = read_day_input(day_name);
+    let example_input = read_day_input_example(day_name);
 
     println!("Part 1 - example input");
     part_1(&example_input);

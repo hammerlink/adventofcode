@@ -4,18 +4,18 @@ use super::{signal_pair::SignalPair, signal_value::SignalValue};
 
 #[allow(dead_code)]
 pub fn parse_day_13_input(input: &str) -> Vec<SignalPair> {
-    let signal_lines: Vec<&str> = input.lines().filter(|line| line.len() > 0).collect();
+    let signal_lines: Vec<&str> = input.lines().filter(|line| !line.is_empty()).collect();
     signal_lines
         .windows(2)
         .step_by(2)
         .map(|signal_pair| {
             let left_parsed = from_str::<SignalValue>(signal_pair[0]).unwrap();
             let right_parsed = from_str::<SignalValue>(signal_pair[1]).unwrap();
-            let mut pair = SignalPair {
+            
+            SignalPair {
                 left_parsed,
                 right_parsed,
-            };
-            pair
+            }
         })
         .collect()
 }
@@ -23,7 +23,7 @@ pub fn parse_day_13_input(input: &str) -> Vec<SignalPair> {
 pub fn parse_input_part_2(input: &str) -> Vec<SignalValue> {
     input
         .lines()
-        .filter(|line| line.len() > 0)
+        .filter(|line| !line.is_empty())
         .map(|line| from_str::<SignalValue>(line).unwrap())
         .collect()
 }

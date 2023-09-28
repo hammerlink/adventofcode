@@ -7,7 +7,7 @@ use std::fs;
 
 pub fn read_input_file(input_path: String) -> Vec<String> {
     fs::read_to_string(&input_path)
-        .expect(format!("Should have been able to read the file {}", input_path).as_str())
+        .unwrap_or_else(|_| panic!("Should have been able to read the file {}", input_path))
         .lines()
         .map(|x| x.to_string())
         .collect::<Vec<String>>()
