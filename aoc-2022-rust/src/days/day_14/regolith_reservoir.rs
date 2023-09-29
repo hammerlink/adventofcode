@@ -3,12 +3,12 @@ use crate::engine::grid_engine::{Grid, Location, MapBoundaries};
 use super::cave_material::CaveMaterial;
 
 #[derive(Clone)]
-struct CaveCell {
+pub struct CaveCell {
     material: CaveMaterial,
 }
 
 pub struct RegolithReservoir {
-    grid: Grid<CaveCell>,
+    pub grid: Grid<CaveCell>,
 }
 
 impl RegolithReservoir {
@@ -53,7 +53,10 @@ impl RegolithReservoir {
         });
     }
 
-    fn next_sand_location(&self, x: isize, y: isize) -> Option<Location> {
+    fn next_sand_location(&self, x: isize, y: isize, max_y: Option<isize>) -> Option<Location> {
+        if max_y.is_some() && y >= max_y.unwrap() {
+            return None;
+        }
         let current = self.grid.get_cell_value(x, y);
         if current.is_some() {
             return None;
@@ -72,6 +75,42 @@ impl RegolithReservoir {
         }
         None
     }
+    pub fn drop_sand_grain_part_2(&mut self, max_y: isize) -> bool {
+        let mut x = 500;
+        let mut y = 0;
+        let mut can_continue = true;
+        let mut can_place_sand = false;
+
+        while can_continue {
+            let next_sand_location = self.next_sand_location(x, y, Some(max_y));
+            match next_sand_location {
+                None => {
+                    can_continue = false;
+                    if !(x == 500 && y == 0) {
+                        can_place_sand = true;
+                    }
+                }
+                Some(location) => {
+                    x = location.x;
+                    y = location.y;
+                }
+            }
+            if y >= max_y -1 {
+                can_continue = false;
+                can_place_sand = true;
+            }
+        }
+        if can_place_sand {
+            self.grid.set_cell_value(
+                x,
+                y,
+                CaveCell {
+                    material: CaveMaterial::RestedSand,
+                },
+            );
+        }
+        can_place_sand
+    }
     pub fn drop_sand_grain(&mut self) -> bool {
         let mut x = 500;
         let mut y = 0;
@@ -80,7 +119,7 @@ impl RegolithReservoir {
         let mut can_place_sand = false;
 
         while can_continue {
-            let next_sand_location = self.next_sand_location(x, y);
+            let next_sand_location = self.next_sand_location(x, y, None);
             match next_sand_location {
                 None => {
                     can_continue = false;

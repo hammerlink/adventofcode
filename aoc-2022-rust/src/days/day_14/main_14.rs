@@ -38,7 +38,19 @@ fn part_1(input: &str) -> usize {
 }
 #[allow(dead_code)]
 fn part_2(input: &str) -> usize {
-    0
+    let rock_location_sequences = parse_input(input);
+    let mut cave = RegolithReservoir::new();
+    for sequence in rock_location_sequences {
+        cave.apply_rock_location_sequence(&sequence);
+    }
+    cave.print();
+    let max_y = cave.grid.max_y + 2;
+    let mut sand_counter: usize = 0;
+    while cave.drop_sand_grain_part_2(max_y) {
+        sand_counter += 1;
+    }
+    cave.print();
+    sand_counter + 1
 }
 
 #[test]
@@ -57,11 +69,11 @@ fn day_12_part_1() {
 #[test]
 fn day_12_part_2_example() {
     let input = include_str!("input.example");
-    assert_eq!(part_2(input), 140);
+    assert_eq!(part_2(input), 93);
 }
 #[test]
 fn day_12_part_2() {
     let input = include_str!("input");
     println!("{}", part_2(input));
-    assert_eq!(part_2(input), 22344);
+    assert_eq!(part_2(input), 20870);
 }
