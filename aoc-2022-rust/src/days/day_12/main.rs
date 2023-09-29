@@ -1,4 +1,5 @@
-use aoc_lib::engine::{grid_engine::{Grid, Location}, grid::directions::BASIC_DIRECTIONS};
+use crate::engine::{grid_engine::{Grid, Location}, grid::directions::BASIC_DIRECTIONS};
+
 
 struct HillLocation {
     pub raw_char: char,
@@ -184,6 +185,7 @@ fn hill_height_conversion() {
     assert_eq!(get_hill_height('o'), 111);
 }
 
+#[allow(dead_code)]
 fn part_1(input: &str) -> usize {
     let mut hill_field = HillField::new(input);
     hill_field.calculate_fastest_path();
@@ -194,6 +196,7 @@ fn part_1(input: &str) -> usize {
     end_field.best_last_visited.unwrap() as usize
 }
 
+#[allow(dead_code)]
 fn part_2(input: &str) -> usize {
     let mut hill_field = HillField::new(input);
     hill_field.calculate_fastest_path();
@@ -219,10 +222,4 @@ fn day_12_part_2_example() {
 fn day_12_part_2() {
     let input = include_str!("input");
     println!("{}", part_2(input));
-}
-
-fn main() {
-    let raw_input_example = include_str!("input.example");
-    part_1(raw_input_example);
-    part_2(raw_input_example);
 }

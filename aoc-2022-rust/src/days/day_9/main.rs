@@ -1,7 +1,4 @@
-
-
-use aoc_lib::engine::input_engine::{read_day_input, read_day_input_example};
-use aoc_lib::engine::grid_engine::Grid;
+use crate::engine::{input_engine::{read_day_input, read_day_input_example}, grid_engine::Grid};
 
 struct RopeCell {
     tail_visited: bool,
@@ -56,7 +53,7 @@ impl RopeField {
 fn execute_command(line: &String, field: &mut RopeField, print: bool) {
     let pieces: Vec<&str> = line.split(" ").collect();
     assert!(pieces.len() == 2);
-    let direction = pieces.get(0).unwrap().clone();
+    let direction = pieces[0].clone();
     let amount = usize::from_str_radix(pieces.get(1).unwrap(), 10).unwrap();
     match direction {
         "U" => move_knots(field, 0, -1, amount),
@@ -145,6 +142,7 @@ fn part_2(input: &Vec<String>, print: bool) {
     println!("{}", result)
 }
 
+#[allow(dead_code)]
 fn main() {
     let day_name = file!();
     let input = read_day_input(&day_name);
