@@ -1,4 +1,4 @@
-use aoc_lib::engine::grid_engine::{Grid, Location, BASIC_DIRECTIONS};
+use aoc_lib::engine::{grid_engine::{Grid, Location}, grid::directions::BASIC_DIRECTIONS};
 
 struct HillLocation {
     pub raw_char: char,

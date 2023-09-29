@@ -1,4 +1,7 @@
-use crate::engine::grid_engine::{Grid, Location, MapBoundaries};
+use crate::engine::{
+    grid::directions::{Direction, DOWN, DOWN_LEFT, DOWN_RIGHT},
+    grid_engine::{Grid, Location, MapBoundaries},
+};
 
 use super::cave_material::CaveMaterial;
 
@@ -10,6 +13,8 @@ pub struct CaveCell {
 pub struct RegolithReservoir {
     pub grid: Grid<CaveCell>,
 }
+
+pub const SAND_MOVEMENT_DIRECTIONS: [Direction; 3] = [DOWN, DOWN_LEFT, DOWN_RIGHT];
 
 impl RegolithReservoir {
     pub fn new() -> Self {
@@ -61,19 +66,17 @@ impl RegolithReservoir {
         if current.is_some() {
             return None;
         }
-        let down = self.grid.get_cell_value(x, y + 1);
-        if down.is_none() {
-            return Some(Location { x, y: y + 1 });
+        let next_location = SAND_MOVEMENT_DIRECTIONS.iter().find(|direction| {
+            let cell = self.grid.get_cell_value(x + direction.x, y + direction.y);
+            cell.is_none()
+        });
+        match next_location {
+            Some(direction) => Some(Location {
+                x: x + direction.x,
+                y: y + direction.y,
+            }),
+            None => None,
         }
-        let down_left = self.grid.get_cell_value(x - 1, y + 1);
-        if down_left.is_none() {
-            return Some(Location { x: x - 1, y: y + 1 });
-        }
-        let down_right = self.grid.get_cell_value(x + 1, y + 1);
-        if down_right.is_none() {
-            return Some(Location { x: x + 1, y: y + 1 });
-        }
-        None
     }
     pub fn drop_sand_grain_part_2(&mut self, max_y: isize) -> bool {
         let mut x = 500;
@@ -95,7 +98,7 @@ impl RegolithReservoir {
                     y = location.y;
                 }
             }
-            if y >= max_y -1 {
+            if y >= max_y - 1 {
                 can_continue = false;
                 can_place_sand = true;
             }
