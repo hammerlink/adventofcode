@@ -70,10 +70,10 @@ pub struct Grid<T: Clone> {
 }
 
 pub struct MapBoundaries {
-    min_x: isize,
-    max_x: isize,
-    min_y: isize,
-    max_y: isize,
+    pub min_x: isize,
+    pub max_x: isize,
+    pub min_y: isize,
+    pub max_y: isize,
 }
 
 impl MapBoundaries {
