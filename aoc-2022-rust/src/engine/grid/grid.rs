@@ -1,14 +1,6 @@
 use std::collections::HashMap;
 
-use super::{boundaries::Boundaries, cell::MapCell};
-
-pub type GridCell<T> = MapCell<Option<T>>;
-
-impl<T> GridCell<T> {
-    pub fn borrow_value(&self) -> Option<&T> {
-        self.value.as_ref()
-    }
-}
+use super::{boundaries::Boundaries, cell::{MapCell, GridCell}};
 
 pub struct Grid<T> {
     pub boundaries: Boundaries,

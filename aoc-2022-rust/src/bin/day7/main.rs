@@ -1,6 +1,5 @@
-use std::borrow::{Borrow, BorrowMut};
-use std::cell::{RefCell};
-use std::rc::{Rc};
+use std::cell::RefCell;
+use std::rc::Rc;
 use lazy_static::lazy_static;
 use aoc_lib::engine::input_engine::{read_day_input, read_day_input_example};
 use regex::Regex;
@@ -14,7 +13,6 @@ impl FileSystem {
         FileSystem {
             root: Rc::new(RefCell::new(FSEntry {
                 name: String::from(""),
-                total_path: "/".to_string(),
                 is_directory: true,
                 is_dir_size_calculated: false,
                 total_size: 0,
@@ -37,7 +35,6 @@ type NodeLink = Rc<RefCell<FSEntry>>;
 
 struct FSEntry {
     name: String,
-    total_path: String,
     is_directory: bool,
     total_size: u128,
     is_dir_size_calculated: bool,
@@ -46,9 +43,6 @@ struct FSEntry {
 }
 
 impl FSEntry {
-    pub fn add_child(&mut self, child: NodeLink) {
-        self.children.push(child);
-    }
 
     pub fn get_child(&self, name: String) -> Option<NodeLink> {
         for child_ref in self.children.iter() {
@@ -82,11 +76,9 @@ fn parse_input(input: &Vec<String>) -> FileSystem {
 
     let root = (&tree.root).clone();
     let mut current_node = root.clone();
-    let mut ls_mode = false;
 
     for line in lines.iter() {
         if line.is_command {
-            ls_mode = line.parts[1] == "ls";
             if line.parts[1] == "cd" {
                 current_path = parse_cd_command(&current_path, &line);
                 let argument = (&line.parts[2]).clone();
@@ -102,12 +94,10 @@ fn parse_input(input: &Vec<String>) -> FileSystem {
             let mut total_size: u128 = 0;
             if !is_directory { total_size = u128::from_str_radix(&line.parts[0], 10).unwrap(); }
 
-            let total_path = join_path_parts(&current_path, &line.parts.get(1).unwrap());
             current_node.as_ref().borrow_mut().children.push(Rc::new(RefCell::new(FSEntry {
                 name: line.parts[1].clone(),
                 is_directory,
                 is_dir_size_calculated: false,
-                total_path,
                 total_size,
                 children: vec![],
                 parent: Some(current_node.clone()),
