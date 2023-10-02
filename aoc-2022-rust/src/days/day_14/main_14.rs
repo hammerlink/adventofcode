@@ -44,7 +44,7 @@ fn part_2(input: &str) -> usize {
         cave.apply_rock_location_sequence(&sequence);
     }
     cave.print();
-    let max_y = cave.grid.max_y + 2;
+    let max_y = cave.grid.boundaries.max_y + 2;
     let mut sand_counter: usize = 0;
     while cave.drop_sand_grain_part_2(max_y) {
         sand_counter += 1;

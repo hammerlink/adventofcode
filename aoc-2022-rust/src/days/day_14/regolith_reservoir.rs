@@ -1,6 +1,10 @@
 use crate::engine::{
-    grid::directions::{Direction, DOWN, DOWN_LEFT, DOWN_RIGHT},
-    grid_engine::{Grid, Location, MapBoundaries},
+    grid::{
+        boundaries::Boundaries,
+        directions::{Direction, DOWN, DOWN_LEFT, DOWN_RIGHT},
+        grid::Grid,
+    },
+    grid_engine::Location,
 };
 
 use super::cave_material::CaveMaterial;
@@ -19,7 +23,7 @@ pub const SAND_MOVEMENT_DIRECTIONS: [Direction; 3] = [DOWN, DOWN_LEFT, DOWN_RIGH
 impl RegolithReservoir {
     pub fn new() -> Self {
         RegolithReservoir {
-            grid: Grid::new(Some(MapBoundaries {
+            grid: Grid::new(Some(Boundaries {
                 min_x: 500,
                 max_x: 500,
                 min_y: 0,
@@ -39,7 +43,7 @@ impl RegolithReservoir {
             let max_y = std::cmp::max(location.y, current_location.y);
             for y in min_y..=max_y {
                 for x in min_x..=max_x {
-                    self.grid.set_cell_value(
+                    self.grid.update_cell(
                         x,
                         y,
                         CaveCell {
@@ -62,14 +66,12 @@ impl RegolithReservoir {
         if max_y.is_some() && y >= max_y.unwrap() {
             return None;
         }
-        let current = self.grid.get_cell_value(x, y);
-        if current.is_some() {
+        if self.grid.has_cell(x, y) {
             return None;
         }
-        let next_location = SAND_MOVEMENT_DIRECTIONS.iter().find(|direction| {
-            let cell = self.grid.get_cell_value(x + direction.x, y + direction.y);
-            cell.is_none()
-        });
+        let next_location = SAND_MOVEMENT_DIRECTIONS
+            .iter()
+            .find(|direction| !self.grid.has_cell(x + direction.x, y + direction.y));
         match next_location {
             Some(direction) => Some(Location {
                 x: x + direction.x,
@@ -104,7 +106,7 @@ impl RegolithReservoir {
             }
         }
         if can_place_sand {
-            self.grid.set_cell_value(
+            self.grid.update_cell(
                 x,
                 y,
                 CaveCell {
@@ -117,7 +119,7 @@ impl RegolithReservoir {
     pub fn drop_sand_grain(&mut self) -> bool {
         let mut x = 500;
         let mut y = 0;
-        let max_y = self.grid.max_y;
+        let max_y = self.grid.boundaries.max_y;
         let mut can_continue = true;
         let mut can_place_sand = false;
 
@@ -138,7 +140,7 @@ impl RegolithReservoir {
             }
         }
         if can_place_sand {
-            self.grid.set_cell_value(
+            self.grid.update_cell(
                 x,
                 y,
                 CaveCell {
