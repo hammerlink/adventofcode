@@ -43,17 +43,13 @@ fn get_x_boundaries(sensors: &Vec<Sensor>) -> (isize, isize) {
     let mut min: isize = 0;
     let mut max: isize = 0;
     for sensor in sensors {
-        if sensor.location.x < min {
-            min = sensor.location.x;
+        let current_min = sensor.location.x - sensor.distance_q as isize;
+        let current_max = sensor.location.x + sensor.distance_q as isize;
+        if current_min < min {
+            min = current_min;
         }
-        if sensor.closest_beacon.x < min {
-            min = sensor.closest_beacon.x;
-        }
-        if sensor.location.x > max {
-            max = sensor.location.x;
-        }
-        if sensor.closest_beacon.x > max {
-            max = sensor.closest_beacon.x;
+        if current_max > max {
+            max = current_max;
         }
     }
     return (min, max);
@@ -82,12 +78,37 @@ fn part_1(input: &str, row_line: u32) -> usize {
     let x_boundaries = get_x_boundaries(&sensors);
     let min_x = x_boundaries.0;
     let max_x = x_boundaries.1;
-    count_impossible_fields(&sensors, row_line, min_x * 2, max_x * 2)
+    count_impossible_fields(&sensors, row_line, min_x, max_x)
 }
 #[allow(dead_code)]
-fn part_2(input: &str) -> usize {
-    let _sensors = parse_input(input);
-    0
+fn part_2(input: &str, max_position: isize) -> usize {
+    let sensors = parse_input(input);
+    let mut location: Option<Location> = None;
+    for y in 0..=max_position {
+        let mut x = 0;
+        loop {
+            let blocking_sensor = sensors
+                .iter()
+                .find(|sensor| !sensor.can_be_unknown_beacon(x, y));
+            if blocking_sensor.is_none() {
+                location = Some(Location { x, y });
+                break;
+            } else {
+                x = blocking_sensor.unwrap().get_max_x(y);
+            }
+            x += 1;
+            if x > max_position {
+                break;
+            }
+        }
+        if location.is_some() {
+            break;
+        }
+    }
+    match location {
+        None => 0,
+        Some(l) => l.x as usize * 4000000 + l.y as usize,
+    }
 }
 
 #[test]
@@ -103,15 +124,17 @@ fn day_12_part_1() {
     let result = part_1(input, 2000000);
     println!("{}", result);
     assert!(result > 4096105);
+    assert_eq!(result, 4883971);
 }
 #[test]
 fn day_12_part_2_example() {
     let input = include_str!("input.example");
-    assert_eq!(part_2(input), 93);
+    assert_eq!(part_2(input, 20), 56000011);
 }
 #[test]
 fn day_12_part_2() {
     let input = include_str!("input");
-    println!("{}", part_2(input));
-    assert_eq!(part_2(input), 20870);
+    let result = part_2(input, 4000000);
+    println!("{}", result);
+    assert_eq!(result, 12691026767556);
 }

@@ -25,6 +25,18 @@ impl Sensor {
             (self.location.x - x).abs() as u64 + (self.location.y - y as isize).abs() as u64;
         distance_q > self.distance_q
     }
+    pub fn can_be_unknown_beacon(&self, x: isize, y: isize) -> bool {
+        if self.closest_beacon.x == x && self.closest_beacon.y == y {
+            return false;
+        }
+        let distance_q =
+            (self.location.x - x).abs() as u64 + (self.location.y - y as isize).abs() as u64;
+        distance_q > self.distance_q
+    }
+
+    pub fn get_max_x(&self, y: isize) -> isize {
+        self.location.x + self.distance_q as isize - (self.location.y - y).abs()
+    }
 }
 
 #[test]
