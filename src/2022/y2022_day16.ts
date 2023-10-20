@@ -193,11 +193,12 @@ if (!module.parent) {
 
         const lines = await FileEngine.readFileToLines(path.join(path.dirname(__filename), './data/y2022_day16.input'), false);
         // part 1
+        let startMs = Date.now();
         const part1Result = Y2022_Day16.part1(lines);
-        console.log('part 1', part1Result);
+        console.log('part 1', part1Result, 'ms', Date.now() - startMs);
 
         // part 2
-        const startMs = Date.now();
+        startMs = Date.now();
         const part2Result = Y2022_Day16.part2(lines);
         console.log('part 2', part2Result, 'ms', Date.now() - startMs);
     }
