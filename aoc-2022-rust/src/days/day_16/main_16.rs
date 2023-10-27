@@ -1,6 +1,6 @@
 use crate::days::day_16::valve::Valve;
 
-use super::valve::{ValveMap, ValveMapTrait, ValveIteration2};
+use super::valve::{ValveIteration2, ValveList, ValveMap, ValveMapTrait};
 
 fn parse_input(input: &str) -> ValveMap {
     let valves: Vec<Valve> = input
@@ -77,7 +77,6 @@ fn iterate_options_2(valves: Vec<&Valve>, iteration: &mut ValveIteration2) -> us
         }
         let extra_pressure_release =
             (iteration.max_steps - updated_step_counter) * valve1.flow_rate;
-        let updated_pressure = iteration.pressure_release + extra_pressure_release;
 
         let mut counter = 0;
         for j in 0..valves.len() {
@@ -113,22 +112,12 @@ fn iterate_options_2(valves: Vec<&Valve>, iteration: &mut ValveIteration2) -> us
             });
             counter = counter + 1;
         }
-        // // fall back in case no steps were possible for valve 2
-        // if counter == 0 {
-        //     let mut updated_open_ids: Vec<String> = iteration.open_valve_ids.clone();
-        //     updated_open_ids.extend(vec![valve1.id.clone()]);
-        //     new_iterations.push(ValveIteration2 {
-        //         max_steps: iteration.max_steps,
-        //         current_valve_1: valve1,
-        //         current_valve_2: iteration.current_valve_2,
-        //         open_valve_ids: updated_open_ids,
-        //         step_counter_1: updated_step_counter,
-        //         step_counter_2: iteration.step_counter_2,
-        //         pressure_release: updated_pressure,
-        //     });
-        // }
     }
     for mut new_iteration in new_iterations {
+        let max_possible_pressure = valves.get_attainable_pressure(&new_iteration);
+        if max_possible_pressure < iteration.pressure_release {
+            continue;
+        }
         let pressure = iterate_options_2(valves.clone(), &mut new_iteration);
         if pressure > iteration.pressure_release {
             iteration.pressure_release = pressure;
@@ -139,7 +128,7 @@ fn iterate_options_2(valves: Vec<&Valve>, iteration: &mut ValveIteration2) -> us
 }
 
 #[allow(dead_code)]
-fn part_1(input: &str) -> usize {
+pub fn part_1(input: &str) -> usize {
     let valve_map = parse_input(input);
     let mut valve_iteration = ValveIteration {
         current_valve: valve_map.get("AA").unwrap(),
@@ -168,6 +157,12 @@ fn part_2(input: &str) -> usize {
         pressure_release: 0,
         max_steps: 26,
     };
+    // let mut valves: Vec<&Valve> = valve_map.values().collect();
+    // valves.sort_by(|a, b| b.flow_rate.cmp(&a.flow_rate));
+    // valves.iter().for_each(|v| {
+    //     println!("valve id {} flow_rate {}", v.id, v.flow_rate);
+    // });
+    // iterate_options_2(valves, &mut valve_iteration)
     iterate_options_2(valve_map.values().collect(), &mut valve_iteration)
 }
 
@@ -177,6 +172,7 @@ pub fn day_16_part_1_run() {
     println!("{}", result);
     assert_eq!(result, 1584);
 }
+#[allow(dead_code)]
 pub fn day_16_part_2_run() {
     let input = include_str!("input");
     let result = part_2(input);
