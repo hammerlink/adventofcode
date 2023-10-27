@@ -1,4 +1,4 @@
-use std::{cmp, collections::HashMap};
+use std::collections::HashMap;
 
 use fxhash::FxHashMap;
 use lazy_static::lazy_static;
@@ -61,10 +61,6 @@ pub struct ValveIteration2<'a> {
     pub pressure_release: usize,
     pub max_steps: usize,
 }
-pub trait ValveList {
-    fn get_attainable_pressure(&self, iteration: &ValveIteration2) -> usize;
-}
-
 
 pub type ValveMap = HashMap<String, Valve>;
 pub trait ValveMapTrait {

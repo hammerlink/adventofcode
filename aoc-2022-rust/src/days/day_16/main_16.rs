@@ -1,6 +1,6 @@
 use crate::days::day_16::valve::Valve;
 
-use super::valve::{ValveIteration2, ValveList, ValveMap, ValveMapTrait};
+use super::valve::{ValveIteration2, ValveMap, ValveMapTrait};
 
 fn parse_input(input: &str) -> ValveMap {
     let valves: Vec<Valve> = input
@@ -114,10 +114,6 @@ fn iterate_options_2(valves: Vec<&Valve>, iteration: &mut ValveIteration2) -> us
         }
     }
     for mut new_iteration in new_iterations {
-        let max_possible_pressure = valves.get_attainable_pressure(&new_iteration);
-        if max_possible_pressure < iteration.pressure_release {
-            continue;
-        }
         let pressure = iterate_options_2(valves.clone(), &mut new_iteration);
         if pressure > iteration.pressure_release {
             iteration.pressure_release = pressure;
