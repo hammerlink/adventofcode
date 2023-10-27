@@ -13,7 +13,7 @@ fn parse_input(input: &str) -> ValveMap {
 
 struct ValveIteration<'a> {
     current_valve: &'a Valve,
-    open_valve_ids: Vec<String>,
+    open_valve_ids: Vec<&'a str>,
     step_counter: usize,
     pressure_release: usize,
     max_steps: usize,
@@ -39,7 +39,7 @@ fn iterate_options(valves: &[&Valve], iteration: &mut ValveIteration) -> usize {
         let extra_pressure_release = (iteration.max_steps - updated_step_counter) * valve.flow_rate;
         let updated_pressure = iteration.pressure_release + extra_pressure_release;
         let mut updated_open_valve_ids = open_valve_ids.clone();
-        updated_open_valve_ids.push(valve.id.clone());
+        updated_open_valve_ids.push(&valve.id);
 
         let mut new_iteration = ValveIteration {
             current_valve: valve,
@@ -128,7 +128,7 @@ pub fn part_1(input: &str) -> usize {
     let valve_map = parse_input(input);
     let mut valve_iteration = ValveIteration {
         current_valve: valve_map.get("AA").unwrap(),
-        open_valve_ids: vec!["AA".to_string()],
+        open_valve_ids: vec!["AA"],
         step_counter: 0,
         pressure_release: 0,
         max_steps: 30,
