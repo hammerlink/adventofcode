@@ -18,39 +18,45 @@ struct ValveIteration<'a> {
     pressure_release: usize,
     max_steps: usize,
 }
-fn iterate_options(valves: Vec<&Valve>, iteration: &mut ValveIteration) -> usize {
+fn iterate_options(valves: &[&Valve], iteration: &mut ValveIteration) -> usize {
     let current_valve = iteration.current_valve;
     let open_valve_ids = &iteration.open_valve_ids;
     let step_counter = iteration.step_counter;
-    let mut new_iterations: Vec<ValveIteration> = vec![];
-    for valve in &valves {
+    let mut max_pressure = iteration.pressure_release;
+
+    for valve in valves {
         if valve.flow_rate == 0 || open_valve_ids.iter().any(|v| v == &valve.id) {
             continue;
         }
+
         let required_steps = valve.valve_steps.get(&current_valve.id).unwrap();
         let updated_step_counter = step_counter + required_steps + 1;
+
         if updated_step_counter > iteration.max_steps {
             continue;
         }
+
         let extra_pressure_release = (iteration.max_steps - updated_step_counter) * valve.flow_rate;
         let updated_pressure = iteration.pressure_release + extra_pressure_release;
         let mut updated_open_valve_ids = open_valve_ids.clone();
         updated_open_valve_ids.push(valve.id.clone());
-        new_iterations.push(ValveIteration {
+
+        let mut new_iteration = ValveIteration {
             current_valve: valve,
             open_valve_ids: updated_open_valve_ids,
             step_counter: updated_step_counter,
             pressure_release: updated_pressure,
             max_steps: iteration.max_steps,
-        });
-    }
-    for mut new_iteration in new_iterations {
-        let pressure = iterate_options(valves.clone(), &mut new_iteration);
-        if pressure > iteration.pressure_release {
-            iteration.pressure_release = pressure;
+        };
+
+        let pressure = iterate_options(valves, &mut new_iteration);
+
+        if pressure > max_pressure {
+            max_pressure = pressure;
         }
     }
 
+    iteration.pressure_release = max_pressure;
     iteration.pressure_release
 }
 
@@ -142,7 +148,11 @@ fn part_1(input: &str) -> usize {
         pressure_release: 0,
         max_steps: 30,
     };
-    iterate_options(valve_map.values().collect(), &mut valve_iteration)
+    let vec_of_valves: Vec<&Valve> = valve_map.values().collect();
+    iterate_options(
+        vec_of_valves.as_slice(),
+        &mut valve_iteration,
+    )
 }
 #[allow(dead_code)]
 fn part_2(input: &str) -> usize {
@@ -159,6 +169,19 @@ fn part_2(input: &str) -> usize {
         max_steps: 26,
     };
     iterate_options_2(valve_map.values().collect(), &mut valve_iteration)
+}
+
+pub fn day_16_part_1_run() {
+    let input = include_str!("input");
+    let result = part_1(input);
+    println!("{}", result);
+    assert_eq!(result, 1584);
+}
+pub fn day_16_part_2_run() {
+    let input = include_str!("input");
+    let result = part_2(input);
+    println!("{}", result);
+    assert_eq!(result, 2052); // 42,877 sec in js
 }
 
 #[test]
