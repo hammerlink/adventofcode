@@ -1,5 +1,6 @@
-use std::collections::HashMap;
+use std::{cmp, collections::HashMap};
 
+use fxhash::FxHashMap;
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -13,7 +14,8 @@ pub struct Valve {
     pub id: String,
     pub flow_rate: usize,
     pub direct_target_ids: Vec<String>,
-    pub valve_steps: HashMap<String, usize>,
+    // pub valve_steps: HashMap<String, usize>,
+    pub valve_steps: FxHashMap<String, usize>,
 }
 
 lazy_static! {
@@ -37,7 +39,7 @@ impl Valve {
             .split(", ")
             .map(|v| v.to_string())
             .collect();
-        let mut valve_steps: HashMap<String, usize> = HashMap::new();
+        let mut valve_steps: FxHashMap<String, usize> = FxHashMap::default();
         direct_target_ids.iter().for_each(|id| {
             valve_steps.insert(id.clone(), 1);
         });
