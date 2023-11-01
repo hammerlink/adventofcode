@@ -4,7 +4,7 @@ export interface MapLocation<T> {
     value: T;
 }
 
-export interface MapLocation3D<T> extends MapLocation<T>{
+export interface MapLocation3D<T> extends MapLocation<T> {
     z: number;
 }
 
@@ -16,7 +16,7 @@ export interface BasicMap<T> {
 
     [x: number]: {
         [y: number]: MapLocation<T>;
-    }
+    };
 }
 
 export interface BasicMap3D<T> {
@@ -31,7 +31,7 @@ export interface BasicMap3D<T> {
         [y: number]: {
             [z: number]: MapLocation3D<T>;
         };
-    }
+    };
 }
 
 export namespace MapEngine {
@@ -57,7 +57,7 @@ export namespace MapEngine {
 
     export function setPointInMap<T>(map: BasicMap<T>, x: number, y: number, value: T): MapLocation<T> {
         if (!map[x]) map[x] = {};
-        if (!map[x][y]) map[x][y] = {x, y, value: null};
+        if (!map[x][y]) map[x][y] = { x, y, value: null };
         map[x][y].value = value;
         if (map.minX === null || x < map.minX) map.minX = x;
         if (map.maxX === null || x > map.maxX) map.maxX = x;
@@ -66,10 +66,16 @@ export namespace MapEngine {
         return map[x][y];
     }
 
-    export function setPointInMap3D<T>(map: BasicMap3D<T>, x: number, y: number, z: number, value: T): MapLocation3D<T> {
+    export function setPointInMap3D<T>(
+        map: BasicMap3D<T>,
+        x: number,
+        y: number,
+        z: number,
+        value: T,
+    ): MapLocation3D<T> {
         if (!map[x]) map[x] = {};
         if (!map[x][y]) map[x][y] = {};
-        if (!map[x][y][z]) map[x][y][z] = {x, y, z, value: null};
+        if (!map[x][y][z]) map[x][y][z] = { x, y, z, value: null };
         map[x][y][z].value = value;
         if (map.minZ === null || z < map.minZ) map.minZ = z;
         if (map.maxZ === null || z > map.maxZ) map.maxZ = z;
@@ -99,30 +105,38 @@ export namespace MapEngine {
         }
     }
 
-    export function printMap<T>(map: BasicMap<T>, getValue: (location: MapLocation<T>) => string, printIndex = false, spaces = true) {
+    export function printMap<T>(
+        map: BasicMap<T>,
+        getValue: (location: MapLocation<T>, x?: number, y?: number) => string,
+        printIndex = false,
+        spaces = true,
+    ) {
         const maxLength = `${map.maxY}`.length;
         for (let y = map.minY; y <= map.maxY; y++) {
-            let line = `${printIndex ? y + ' ': ''}`;
-            for (let x = map.minX; x <= map.maxX; x++) line += `${printIndex ? x + ' ' : ''}${getValue(getPoint(map, x, y))}${spaces ? ' ' : ''}`;
+            let line = `${printIndex ? y + ' ' : ''}`;
+            for (let x = map.minX; x <= map.maxX; x++)
+                line += `${printIndex ? x + ' ' : ''}${getValue(getPoint(map, x, y), x, y)}${spaces ? ' ' : ''}`;
             console.log(line);
         }
     }
 
-    export function printMap3D<T>(map: BasicMap3D<T>, getValue: (location: MapLocation3D<T>) => string, printIndex = false) {
+    export function printMap3D<T>(
+        map: BasicMap3D<T>,
+        getValue: (location: MapLocation3D<T>) => string,
+        printIndex = false,
+    ) {
         const maxLength = `${map.maxY}`.length;
         for (let z = map.minZ; z <= map.maxZ; z++) {
-
             console.log('z', z);
             for (let y = map.minY; y <= map.maxY; y++) {
-                let line = `${printIndex ? getPrintIndex(y, maxLength): ''}`;
+                let line = `${printIndex ? getPrintIndex(y, maxLength) : ''}`;
                 for (let x = map.minX; x <= map.maxX; x++) {
-                    const location = getPoint3D(map, x, y , z);
+                    const location = getPoint3D(map, x, y, z);
                     line += `${getValue(location)} `;
                 }
                 console.log(line);
             }
         }
-
     }
 
     export function getPrintIndex(y: number, maxLength: number): string {
@@ -150,7 +164,7 @@ export namespace MapEngine {
             for (let dy = -1; dy <= 1; dy++) {
                 for (let dz = -1; dz <= 1; dz++) {
                     if (dx === 0 && dy === 0 && dz === 0) continue;
-                    output.push(getPoint3D(map, x + dx , y + dy, z + dz));
+                    output.push(getPoint3D(map, x + dx, y + dy, z + dz));
                 }
             }
         }
@@ -158,7 +172,7 @@ export namespace MapEngine {
     }
 
     export function flipMapXAxis<T>(map: BasicMap<T>): BasicMap<T> {
-        const copy:BasicMap<T> = JSON.parse(JSON.stringify(map));
+        const copy: BasicMap<T> = JSON.parse(JSON.stringify(map));
         const rangeX = map.maxX - map.minX;
         for (let y = map.minY; y <= map.maxY; y++) {
             for (let x = 0; x <= rangeX; x++) {
@@ -180,24 +194,34 @@ export namespace MapEngine {
     }
 
     export function rotateLeft<T>(map: BasicMap<T>): BasicMap<T> {
-        const copy:BasicMap<T> = JSON.parse(JSON.stringify(map));
+        const copy: BasicMap<T> = JSON.parse(JSON.stringify(map));
         const rangeY = map.maxY - map.minY;
         const rangeX = map.maxX - map.minX;
         for (let y = 0; y <= rangeY; y++) {
             for (let x = 0; x <= rangeX; x++) {
-                setPointInMap(copy, map.minX + y, map.minY + (rangeX - x), getPoint(map, map.minX + x, map.minY + y)?.value);
+                setPointInMap(
+                    copy,
+                    map.minX + y,
+                    map.minY + (rangeX - x),
+                    getPoint(map, map.minX + x, map.minY + y)?.value,
+                );
             }
         }
         return copy;
     }
 
     export function rotateRight<T>(map: BasicMap<T>): BasicMap<T> {
-        const copy:BasicMap<T> = JSON.parse(JSON.stringify(map));
+        const copy: BasicMap<T> = JSON.parse(JSON.stringify(map));
         const rangeY = map.maxY - map.minY;
         const rangeX = map.maxX - map.minX;
         for (let y = 0; y <= rangeY; y++) {
             for (let x = 0; x <= rangeX; x++) {
-                setPointInMap(copy, map.minX + (rangeY - y), map.minY + x, getPoint(map, map.minX + x, map.minY + y)?.value);
+                setPointInMap(
+                    copy,
+                    map.minX + (rangeY - y),
+                    map.minY + x,
+                    getPoint(map, map.minX + x, map.minY + y)?.value,
+                );
             }
         }
         return copy;
