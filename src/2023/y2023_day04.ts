@@ -41,12 +41,10 @@ export namespace Y2023_Day04 {
             for (let x = 0; x < points; x++) {
                 const j = i + 1 + x;
                 if (j > cards.length - 1) break;
-                // console.log('adding', cards[j].index, points, card.count, JSON.stringify(card));
                 cards[j].count += card.count;
             }
         }
         return cards.reduce((t, v) => {
-            // console.log(v.index, v.count);
             return t + v.count;
         }, 0);
     }
@@ -79,7 +77,7 @@ if (!module.parent) {
         startMs = Date.now();
         const part2Result = Y2023_Day04.part2(lines);
         console.log('part 2', part2Result, 'ms', Date.now() - startMs);
-        // assert.equal(part2Result, 66681);
+        assert.equal(part2Result, 5921508);
     }
 
     main().catch((err) => console.error(err));
