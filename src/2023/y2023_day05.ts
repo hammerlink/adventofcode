@@ -1,6 +1,6 @@
-import { FileEngine } from '../engine/file.engine';
+import {FileEngine} from '../engine/file.engine';
 import * as assert from 'assert';
-import { from } from 'rxjs';
+import {from} from 'rxjs';
 
 export namespace Y2023_Day05 {
     export type StageTransformer = {
@@ -17,7 +17,9 @@ export namespace Y2023_Day05 {
         fromType: string;
         toType: string;
         transformers: StageTransformer[];
+        executedRanges?: Range[];
     };
+
     function parseStage(lines: string[]): Stage {
         const firstPieces = lines[0].split(' ')[0].split('-to-');
         const fromType = firstPieces[0];
@@ -39,8 +41,9 @@ export namespace Y2023_Day05 {
             transformers.push(transformer);
         }
 
-        return { fromType, toType, transformers };
+        return {fromType, toType, transformers};
     }
+
     export function parseInput(lines: string[]): { seeds: number[]; stages: Stage[] } {
         const seeds = Array.from(lines[0].matchAll(/\d+/g)).map((x) => parseInt(x[0]));
         const stages: Stage[] = [];
@@ -55,8 +58,9 @@ export namespace Y2023_Day05 {
             }
         }
         if (stageLines.length) stages.push(parseStage(stageLines));
-        return { seeds, stages };
+        return {seeds, stages};
     }
+
     function executeStage(stage: Stage, input: number[]): number[] {
         return input.map((value) => {
             const matchingTransformer = stage.transformers.find(
@@ -69,6 +73,7 @@ export namespace Y2023_Day05 {
             return value;
         });
     }
+
     function getLocationFromSeed(stages: Stage[], seed: number): number {
         let value = seed;
         stages.forEach((stage) => {
@@ -78,7 +83,7 @@ export namespace Y2023_Day05 {
     }
 
     export function part1(lines: string[]): number {
-        const { seeds, stages } = parseInput(lines);
+        const {seeds, stages} = parseInput(lines);
         const stageMap: { [stage: string]: number[] } = {};
         stageMap.seed = seeds;
         let currentInput = [...seeds];
@@ -91,19 +96,24 @@ export namespace Y2023_Day05 {
     }
 
     type Range = { start: number; stop: number };
+
     function hasRangeOverlap(a: Range, b: Range, extraDelta = 0): boolean {
         const aStart = a.start - extraDelta;
         const aStop = a.stop + extraDelta;
         if (b.start <= aStart && b.stop >= aStart) return true;
         if (b.start <= aStop && b.stop >= aStop) return true;
+        if (aStart <= b.start && aStop >= b.start) return true;
+        if (aStart <= b.stop && aStop >= b.stop) return true;
         return false;
     }
+
     function getRangeIntersection(a: Range, b: Range): Range | null {
         const maxStart = a.start > b.start ? a.start : b.start;
         const minStop = a.stop < b.stop ? a.stop : b.stop;
         if (maxStart >= minStop) return null;
-        return { start: maxStart, stop: minStop };
+        return {start: maxStart, stop: minStop};
     }
+
     function projectIntersection(original: Range, intersection: Range, target: Range): Range {
         const start = target.start + (intersection.start - original.start);
         return <Range>{
@@ -111,11 +121,13 @@ export namespace Y2023_Day05 {
             stop: start + (intersection.stop - intersection.start),
         };
     }
+
     function mergeRanges(a: Range, b: Range): Range {
         const start = a.start < b.start ? a.start : b.start;
         const stop = a.stop > b.stop ? a.stop : b.stop;
-        return { start, stop };
+        return {start, stop};
     }
+
     function removeRangeOutRanges(ranges: Range[], removeRange: Range): Range[] {
         const output: Range[] = [];
         ranges.forEach((range) => {
@@ -124,6 +136,7 @@ export namespace Y2023_Day05 {
         output.sort((a, b) => a.start - b.start);
         return output;
     }
+
     function removeRangeFromRange(baseRange: Range, cutoutRange: Range): Range[] {
         const output: Range[] = [];
 
@@ -133,18 +146,19 @@ export namespace Y2023_Day05 {
         if (baseRange.start < cutoutRange.start && cutoutRange.stop > baseRange.start) {
             const start = baseRange.start;
             const stop = cutoutRange.start;
-            if (stop < baseRange.stop) output.push({ start, stop });
+            if (stop < baseRange.stop) output.push({start, stop});
         }
         if (baseRange.stop > cutoutRange.stop && baseRange.stop > cutoutRange.start) {
             const start = cutoutRange.stop;
             const stop = baseRange.stop;
-            if (start > baseRange.start) output.push({ start, stop });
+            if (start > baseRange.start) output.push({start, stop});
         }
         // nothing has been cutout -> no intersection
         if (!output.length) return [baseRange];
 
         return output;
     }
+
     function addRangeToRanges(baseRanges: Range[], range: Range) {
         let matchingIndex = baseRanges.findIndex((x) => x !== range && hasRangeOverlap(x, range));
         if (matchingIndex !== -1) {
@@ -157,13 +171,15 @@ export namespace Y2023_Day05 {
         }
         baseRanges.push(range);
     }
+
     function cleanUpRanges(ranges: Range[]) {
         ranges.sort((a, b) => a.start - b.start);
         for (let i = 0; i < ranges.length; i++) {
-            addRangeToRanges(ranges, { ...ranges[i] });
+            addRangeToRanges(ranges, {...ranges[i]});
             ranges.sort((a, b) => a.start - b.start);
         }
     }
+
     function calculateEntryRanges(
         transformer: StageTransformer,
         previousStage: Stage,
@@ -210,31 +226,13 @@ export namespace Y2023_Day05 {
         const nextPreviousStage = allStages.find((x) => x.toType === previousStage.fromType);
         if (nextPreviousStage) calculateEntryRanges(transformer, nextPreviousStage, remainingRanges, allStages);
     }
+
     function calculatePreviousStageRanges(currentStage: Stage, previousStage: Stage, allStages: Stage[]) {
         currentStage.transformers.forEach((transformer) => {
             calculateEntryRanges(transformer, previousStage, [transformer.fromRange], allStages);
-            // const fromRange = transformer.fromRange;
-            // transformer.stageRangeMap[previousStage.toType] = previousStage.transformers
-            //     .filter((x) => hasRangeOverlap(x.toRange, fromRange))
-            //     .map((x) => {
-            //         // TODO CHECK FOR PIECES THAT CAN BE REMOVED
-            //         // TRY TO CALCULATE WHAT ACTUAL VALUES CAN GET YOU IN THIS STAGE
-            //         const intersectionRange = getRangeIntersection(x.toRange, fromRange);
-            //         if (intersectionRange === null) return null;
-            //         const start = x.fromRange.start + (intersectionRange.start - x.toRange.start);
-            //         return <Range>{
-            //             start,
-            //             stop: start + (intersectionRange.stop - intersectionRange.start),
-            //         };
-            //     })
-            //     .filter((x) => x !== null)
-            //     .sort((a, b) => a.start - b.start);
-            // if (!transformer.stageRangeMap[previousStage.toType].length)
-            //     transformer.stageRangeMap[previousStage.toType] = [fromRange];
-            // // check all previous stages
-            // // check all transformers of previous stage
         });
     }
+
     function getTransformerFromRange(fromStart: number, length: number): Range {
         return {
             start: fromStart,
@@ -242,63 +240,60 @@ export namespace Y2023_Day05 {
         };
     }
 
+    function splitInputRanges(
+        input: Range[],
+        stage: Stage,
+    ): { unaffectedRanges: Range[]; affectedRanges: { range: Range; transformer: StageTransformer }[] } {
+        const affectedRanges: { range: Range; transformer: StageTransformer }[] = [];
+        const unaffectedRanges: Range[] = [];
+
+        input.forEach((range) => {
+            const matchingTransformers = stage.transformers.filter((x) => hasRangeOverlap(x.fromRange, range, -1)); // -1 ensures hard overlap, not just equal value
+            if (!matchingTransformers) {
+                unaffectedRanges.push(range);
+                return;
+            }
+
+            let remainingRanges = [range];
+            matchingTransformers.forEach(transformer => {
+                const fromIntersection = getRangeIntersection(transformer.fromRange, range);
+                affectedRanges.push({range: fromIntersection, transformer});
+                remainingRanges = removeRangeOutRanges(remainingRanges, fromIntersection);
+            });
+            unaffectedRanges.push(...remainingRanges);
+        });
+
+        return {unaffectedRanges, affectedRanges};
+    }
+
     export function part2(lines: string[]): number {
-        const { seeds: rawSeeds, stages } = parseInput(lines);
+        const {seeds: rawSeeds, stages} = parseInput(lines);
         let lowest: number | undefined;
-        calculatePreviousStageRanges(stages[stages.length - 1], stages[stages.length - 2], stages);
-        // stages.forEach((stage, index) => {
-        //     console.log('checking stage', stage.fromType, '->', stage.toType);
-        //     stage.transformers.sort((a, b) => a.toStart - b.toStart);
-        //     const ranges: Range[] = stage.transformers.map((x) => ({
-        //         start: x.fromStart,
-        //         stop: x.fromStart + x.length - 1,
-        //     }));
-        //     // stage.ranges = ranges;
-        //     if (index > 0) calculatePreviousStageRanges(stage, stages[index - 1], stages);
-        // });
-        console.log(JSON.stringify(stages, null, 4));
-        return 0;
+        // calculatePreviousStageRanges(stages[stages.length - 1], stages[stages.length - 2], stages);
+        // console.log(JSON.stringify(stages, null, 4));
         // create a range of ideal ranges
         // reverse engineer stages?
         // redefine ranges, remove overlapping areas
-        const ranges: { start: number; stop: number }[] = [];
+
+        let ranges: { start: number; stop: number }[] = [];
         for (let i = 0; i < rawSeeds.length; i += 2) {
             const start = rawSeeds[i];
             const rangeValue = rawSeeds[i + 1];
-            const range = { start, stop: start + rangeValue - 1 };
-            let canBeAdded = true;
-            ranges.forEach((otherRange) => {
-                if (!canBeAdded) return;
-                if (otherRange.start <= range.start && otherRange.stop >= range.stop) {
-                    canBeAdded = false;
-                    return;
-                }
-                if (otherRange.start < range.start && otherRange.stop > range.start) {
-                    range.start = otherRange.stop + 1;
-                    console.log('slicing start', range);
-                }
-                if (otherRange.start < range.stop && otherRange.stop > range.stop) {
-                    range.stop = otherRange.start - 1;
-                    console.log('slicing stop', range);
-                }
-            });
-            // remove overlap
-            if (canBeAdded && range.start < range.stop) ranges.push(range);
-            else console.log('skipping', range);
+            const range = {start, stop: start + rangeValue - 1};
+            ranges.push(range);
         }
-        const seedMap: { [seed: number]: null } = {};
-        for (let i = 0; i < rawSeeds.length; i += 2) {
-            const start = rawSeeds[i];
-            const range = rawSeeds[i + 1];
-            for (let x = 0; x < range; x++) {
-                const seed = start + x;
-                if (seedMap[seed] === null) continue;
-                const location = getLocationFromSeed(stages, start + x);
-                if (lowest === undefined || location < lowest) lowest = location;
-                seedMap[seed] === null;
-            }
-        }
-        return lowest;
+        cleanUpRanges(ranges);
+        stages.forEach((stage) => {
+            const {unaffectedRanges, affectedRanges} = splitInputRanges(ranges, stage);
+            ranges = [
+                ...unaffectedRanges,
+                ...affectedRanges.map((x) =>
+                    projectIntersection(x.transformer.fromRange, x.range, x.transformer.toRange),
+                ),
+            ];
+            cleanUpRanges(ranges);
+        });
+        return ranges[0].start;
     }
 }
 
@@ -329,7 +324,7 @@ if (!module.parent) {
         startMs = Date.now();
         const part2Result = Y2023_Day05.part2(lines);
         console.log('part 2', part2Result, 'ms', Date.now() - startMs);
-        // assert.equal(part2Result, 592158);
+        assert.equal(part2Result, 125742456);
     }
 
     main().catch((err) => console.error(err));
