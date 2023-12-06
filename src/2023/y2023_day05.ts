@@ -1,6 +1,5 @@
 import {FileEngine} from '../engine/file.engine';
 import * as assert from 'assert';
-import {from} from 'rxjs';
 
 export namespace Y2023_Day05 {
     export type StageTransformer = {
@@ -268,13 +267,6 @@ export namespace Y2023_Day05 {
 
     export function part2(lines: string[]): number {
         const {seeds: rawSeeds, stages} = parseInput(lines);
-        let lowest: number | undefined;
-        // calculatePreviousStageRanges(stages[stages.length - 1], stages[stages.length - 2], stages);
-        // console.log(JSON.stringify(stages, null, 4));
-        // create a range of ideal ranges
-        // reverse engineer stages?
-        // redefine ranges, remove overlapping areas
-
         let ranges: { start: number; stop: number }[] = [];
         for (let i = 0; i < rawSeeds.length; i += 2) {
             const start = rawSeeds[i];
