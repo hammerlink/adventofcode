@@ -5,14 +5,61 @@ export namespace Y2023_Day07 {
     const cardTypes = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
     type HandCard = { card: string; amount: number; value: number };
 
-    type Hand = { cards: string[]; handCards: HandCard[]; bid: number; values: number[] };
+    type Card = { card: string; value: number };
+    type Hand = {
+        cards: Card[];
+        handCards: HandCard[];
+        bid: number;
+        values: number[];
+        score?: number;
+        jokerCards: Card[];
+        possibleJokerCards: Card[];
+        scoreCards?: string;
+    };
 
-    function parseLineToHand(line: string): Hand {
+    const JOKER_VALUE = 30 - cardTypes.indexOf('J');
+
+    function getHandScore(hand: Hand, withJoker: boolean): number {
+        // first number = amount
+        // second number = has second pair
+        // value 1st card, 2 digits
+        // value 2nd card, 2 digits
+        // value 3rd card, 2 digits
+        // value 4th card, 2 digits
+        // value 5th card, 2 digits
+        const handCards = getHandCards(hand);
+        return parseInt(
+            `${handCards[0].amount}${handCards[1]?.amount === 2 ? 1 : 0}${hand.values.reduce(
+                (t, v) => (withJoker && v === JOKER_VALUE ? t + '00' : t + (30 - v)),
+                '',
+            )}`,
+        );
+    }
+
+    function getHandCards(hand: Hand): HandCard[] {
+        const handCards: HandCard[] = [];
+        hand.cards.forEach((card) => {
+            const value = cardTypes.indexOf(card.card);
+            let handCard = handCards.find((x) => x.card === card.card);
+            if (!handCard) {
+                handCard = { value, card: card.card, amount: 0 };
+                handCards.push(handCard);
+            }
+            handCard.amount++;
+        });
+        handCards.sort((a, b) => {
+            if (a.amount !== b.amount) return b.amount - a.amount;
+            return a.value - b.value;
+        });
+        return handCards;
+    }
+
+    function parseLineToHand(line: string, withJoker = false): Hand {
         const pieces = line.split(' ');
-        const cards = pieces[0].split('');
+        const rawCards = pieces[0].split('');
         const bid = parseInt(pieces[1]);
         const handCards: HandCard[] = [];
-        cards.forEach((card) => {
+        rawCards.forEach((card) => {
             const value = cardTypes.indexOf(card);
             let handCard = handCards.find((x) => x.card === card);
             if (!handCard) {
@@ -25,34 +72,57 @@ export namespace Y2023_Day07 {
             if (a.amount !== b.amount) return b.amount - a.amount;
             return a.value - b.value;
         });
-        return { cards, bid, handCards, values: cards.map((x) => cardTypes.indexOf(x)) };
+        const cards = rawCards.map((x) => ({ card: x, value: 30 - cardTypes.indexOf(x) }));
+        const possibleJokerCards = [{ card: 'A', value: 30 - cardTypes.indexOf('A') }];
+        cards.forEach((x) => {
+            if (x.card !== 'J' && !possibleJokerCards.find((y) => x.card === y.card)) possibleJokerCards.push({ ...x });
+        });
+        const hand: Hand = {
+            cards,
+            bid,
+            handCards,
+            values: rawCards.map((x) => cardTypes.indexOf(x)),
+            jokerCards: cards.filter((x) => x.card === 'J'),
+            possibleJokerCards,
+        };
+        hand.score = getHandScore(hand, withJoker);
+        if (withJoker) replaceJokers(hand);
+        return hand;
+    }
+
+    function replaceJokers(hand: Hand) {
+        const remainingJokerCards = hand.cards.filter((x) => x.card === 'J');
+        if (!remainingJokerCards.length) {
+            const score = getHandScore(hand, true);
+            if (score > hand.score) hand.score = score;
+            return;
+        }
+
+        for (let i = 0; i < remainingJokerCards.length; i++) {
+            const original = remainingJokerCards[i];
+            const handIndex = hand.cards.indexOf(original);
+
+            hand.possibleJokerCards.forEach((card) => {
+                hand.cards[handIndex] = { ...card };
+                replaceJokers(hand);
+            });
+
+            hand.cards[handIndex] = original;
+        }
     }
 
     export function part1(lines: string[]): number {
-        const hands = lines.map(parseLineToHand);
+        const hands = lines.map((line) => parseLineToHand(line));
         // sort by increasing strength
-        hands.sort((a, b) => {
-            // higher identical amount
-            if (a.handCards[0].amount !== b.handCards[0].amount) return a.handCards[0].amount - b.handCards[0].amount;
-            // second pair?
-            if (a.handCards[0].amount !== 5 && a.handCards[1].amount !== b.handCards[1].amount)
-                return a.handCards[1].amount - b.handCards[1].amount;
-            // high card iterate actual cards
-
-            for (let i = 0; i < a.values.length; i++) {
-                if (a.values[i] !== b.values[i]) return b.values[i] - a.values[i];
-            }
-
-            // for (let i = 0; i < a.handCards.length; i++) {
-            //     if (a.handCards[i].value !== b.handCards[i].value) return a.handCards[i].value - b.handCards[i].value;
-            // }
-            return 0;
-        });
+        hands.sort((a, b) => a.score - b.score);
         return hands.reduce((t, v, index) => t + v.bid * (index + 1), 0);
     }
 
     export function part2(lines: string[]): number {
-        return 0;
+        const hands = lines.map((line) => parseLineToHand(line, true));
+        // sort by increasing strength
+        hands.sort((a, b) => a.score - b.score);
+        return hands.reduce((t, v, index) => t + v.bid * (index + 1), 0);
     }
 }
 
@@ -75,14 +145,16 @@ if (!module.parent) {
         let startMs = Date.now();
         const part1Result = Y2023_Day07.part1(lines);
         console.log('part 1', part1Result, 'ms', Date.now() - startMs);
-        // assert.equal(part1Result, 2065338);
+        assert.equal(part1Result, 247815719);
 
         // part 2
-        assert.equal(Y2023_Day07.part2(exampleLines), 0, 'example 1 part 2');
+        assert.equal(Y2023_Day07.part2(exampleLines), 5905, 'example 1 part 2');
 
         startMs = Date.now();
         const part2Result = Y2023_Day07.part2(lines);
         console.log('part 2', part2Result, 'ms', Date.now() - startMs);
+        // 249190030, TOO HIGH missing opportunities
+        // 249000030, TOO HIGH
         // assert.equal(part2Result, 0);
     }
 
