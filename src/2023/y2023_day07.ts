@@ -7,12 +7,12 @@ export namespace Y2023_Day07 {
 
     type Card = { card: string; value: number };
     type Hand = {
+        originalCards: Card[];
+        rawOriginal: string;
         cards: Card[];
-        handCards: HandCard[];
         bid: number;
         values: number[];
         score?: number;
-        jokerCards: Card[];
         possibleJokerCards: Card[];
         scoreCards?: string;
     };
@@ -29,8 +29,8 @@ export namespace Y2023_Day07 {
         // value 5th card, 2 digits
         const handCards = getHandCards(hand);
         return parseInt(
-            `${handCards[0].amount}${handCards[1]?.amount === 2 ? 1 : 0}${hand.values.reduce(
-                (t, v) => (withJoker && v === JOKER_VALUE ? t + '00' : t + (30 - v)),
+            `${handCards[0].amount}${handCards[1]?.amount === 2 ? 1 : 0}${hand.originalCards.reduce(
+                (t, v) => (withJoker && v.card === 'J' ? t + '00' : t + v.value),
                 '',
             )}`,
         );
@@ -58,31 +58,17 @@ export namespace Y2023_Day07 {
         const pieces = line.split(' ');
         const rawCards = pieces[0].split('');
         const bid = parseInt(pieces[1]);
-        const handCards: HandCard[] = [];
-        rawCards.forEach((card) => {
-            const value = cardTypes.indexOf(card);
-            let handCard = handCards.find((x) => x.card === card);
-            if (!handCard) {
-                handCard = { value, card, amount: 0 };
-                handCards.push(handCard);
-            }
-            handCard.amount++;
-        });
-        handCards.sort((a, b) => {
-            if (a.amount !== b.amount) return b.amount - a.amount;
-            return a.value - b.value;
-        });
         const cards = rawCards.map((x) => ({ card: x, value: 30 - cardTypes.indexOf(x) }));
         const possibleJokerCards = [{ card: 'A', value: 30 - cardTypes.indexOf('A') }];
         cards.forEach((x) => {
             if (x.card !== 'J' && !possibleJokerCards.find((y) => x.card === y.card)) possibleJokerCards.push({ ...x });
         });
         const hand: Hand = {
+            originalCards: [...cards],
+            rawOriginal: pieces[0],
             cards,
             bid,
-            handCards,
             values: rawCards.map((x) => cardTypes.indexOf(x)),
-            jokerCards: cards.filter((x) => x.card === 'J'),
             possibleJokerCards,
         };
         hand.score = getHandScore(hand, withJoker);
@@ -94,7 +80,10 @@ export namespace Y2023_Day07 {
         const remainingJokerCards = hand.cards.filter((x) => x.card === 'J');
         if (!remainingJokerCards.length) {
             const score = getHandScore(hand, true);
-            if (score > hand.score) hand.score = score;
+            if (score > hand.score) {
+                hand.score = score;
+                hand.scoreCards = hand.cards.reduce((t, card) => t + card.card, '');
+            }
             return;
         }
 
@@ -122,6 +111,9 @@ export namespace Y2023_Day07 {
         const hands = lines.map((line) => parseLineToHand(line, true));
         // sort by increasing strength
         hands.sort((a, b) => a.score - b.score);
+        // hands.forEach((x) =>
+        //     console.log(`start: ${x.rawOriginal} scoreCards: ${x.scoreCards ?? x.rawOriginal} score: ${x.score}`),
+        // );
         return hands.reduce((t, v, index) => t + v.bid * (index + 1), 0);
     }
 }
@@ -153,9 +145,7 @@ if (!module.parent) {
         startMs = Date.now();
         const part2Result = Y2023_Day07.part2(lines);
         console.log('part 2', part2Result, 'ms', Date.now() - startMs);
-        // 249190030, TOO HIGH missing opportunities
-        // 249000030, TOO HIGH
-        // assert.equal(part2Result, 0);
+        assert.equal(part2Result, 248747492);
     }
 
     main().catch((err) => console.error(err));
