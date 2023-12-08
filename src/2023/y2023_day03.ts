@@ -97,7 +97,7 @@ if (!module.parent) {
         startMs = Date.now();
         const part2Result = Y2023_Day03.part2(lines);
         console.log('part 2', part2Result, 'ms', Date.now() - startMs);
-        // assert.equal(part2Result, 66681);
+        assert.equal(part2Result, 93994191);
     }
 
     main().catch((err) => console.error(err));
