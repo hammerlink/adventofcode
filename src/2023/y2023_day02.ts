@@ -67,7 +67,7 @@ if (!module.parent) {
         // part 1
         let startMs = Date.now();
         const part1Result = Y2023_Day02.part1(lines);
-        // assert.equal(part1Result, 54573);
+        assert.equal(part1Result, 2237);
         console.log('part 1', part1Result, 'ms', Date.now() - startMs);
 
         // part 2
@@ -75,6 +75,7 @@ if (!module.parent) {
 
         startMs = Date.now();
         const part2Result = Y2023_Day02.part2(lines);
+        assert.equal(part2Result, 66681);
         console.log('part 2', part2Result, 'ms', Date.now() - startMs);
     }
 
