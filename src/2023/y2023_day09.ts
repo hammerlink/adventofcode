@@ -35,6 +35,18 @@ export namespace Y2023_Day09 {
         }
         return lastAdded;
     }
+    function calculatePrevious(sequence: Sequence): number {
+        let lastAdded: number | undefined;
+        for (let i = 0 ; i < sequence.values.length; i++) {
+            let index = sequence.values.length - 1 -i;
+            const values = sequence.values[index];
+            const firstValue = values[0];
+            lastAdded = firstValue - (lastAdded ?? 0);
+            sequence.values[index] = [lastAdded, ...values];
+            // values.push(lastAdded);
+        }
+        return lastAdded;
+    }
     export function part1(lines: string[]): number {
         const sequences = lines.map(parseSequence);
         sequences.forEach(calculateSequence);
@@ -42,7 +54,9 @@ export namespace Y2023_Day09 {
     }
 
     export function part2(lines: string[]): number {
-        return 0;
+        const sequences = lines.map(parseSequence);
+        sequences.forEach(calculateSequence);
+        return sequences.reduce((t, sequence) => t + calculatePrevious(sequence), 0);
     }
 }
 
@@ -65,16 +79,16 @@ if (!module.parent) {
         let startMs = Date.now();
         const part1Result = Y2023_Day09.part1(lines);
         console.log('part 1', part1Result, 'ms', Date.now() - startMs);
-        assert.equal(part1Result, 0);
+        assert.equal(part1Result, 1681758908);
 
         // part 2
-        assert.equal(Y2023_Day09.part2(exampleLines), 0, 'example part 2');
+        assert.equal(Y2023_Day09.part2(exampleLines), 2, 'example part 2');
 
         startMs = Date.now();
         console.log('part 2 start');
         const part2Result = Y2023_Day09.part2(lines);
         console.log('part 2', part2Result, 'ms', Date.now() - startMs);
-        assert.equal(part2Result, 0);
+        // assert.equal(part2Result, 0);
     }
 
     main().catch((err) => console.error(err));
