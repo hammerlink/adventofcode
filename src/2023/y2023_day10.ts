@@ -174,10 +174,6 @@ export namespace Y2023_Day10 {
         );
     }
 
-    // DIRECTION X:1 Y:0 EAST   LEFT X:0 Y:-1 RIGHT X:0 Y:1
-    // DIRECTION X:-1 Y:0 WEST  LEFT X:0 Y:1 RIGHT X:0 Y:-1
-    // DIRECTION X:0 Y:1 SOUTH  LEFT X:1 Y:0 RIGHT X:-1 Y:0
-    // DIRECTION X:0 Y:-1 NORTH LEFT X:-1 Y:0 RIGHT X:1 Y:0
     function getLeftRight(direction: Direction): { left: Direction; right: Direction } {
         // EAST
         if (direction.x === 1) return { left: { x: 0, y: -1 }, right: { x: 0, y: 1 } };
@@ -249,15 +245,6 @@ export namespace Y2023_Day10 {
         const isInnerLeft = calculateInnerIsLeft(map);
         console.log('is inner left', isInnerLeft);
 
-        // console.log('print left & right borders');
-        // MapEngine.printMap(map, pipe => {
-        //     const adjacent = allDirectAdjacentLocations(pipe, map);
-        //     const adjacentToPipe = adjacent.find(x => x?.value.rightValues.includes(pipe) || x?.value.leftValues.includes(pipe));
-        //     if (adjacentToPipe) return 'A';
-        //     return pipe.value.inLoop ? 'X' : '.';
-        // });
-        // console.log('END print left & right borders');
-
         let areaTrack: MapLocation<Pipe>[] = [];
         let foundAreas: { startIndex: number; endIndex: number }[] = [];
         map.track?.forEach((pipe) => {
@@ -267,16 +254,8 @@ export namespace Y2023_Day10 {
             const startIndex = areaTrack.indexOf(previousAdjacent);
             if (startIndex === areaTrack.length - 2) return;
             const endIndex = areaTrack.length - 1;
-            const innerArea = foundAreas.find((x) => startIndex <= x.startIndex && x.endIndex <= endIndex);
-            if (innerArea) return;
-            // todo
-            console.log('pipe touch', startIndex, endIndex);
             const areaLine = areaTrack.slice(startIndex);
             foundAreas.push({ startIndex, endIndex });
-            // 104 107
-            if (startIndex === 104 && endIndex === 107) {
-                const x = null;
-            }
             const includedValues = isInnerLeft ? previousAdjacent.value.leftValues : previousAdjacent.value.rightValues;
             if (includedValues.includes(pipe)) fillArea(map, areaLine, isInnerLeft);
         });
@@ -284,41 +263,12 @@ export namespace Y2023_Day10 {
     function fillArea(map: PipeMap, areaLine: MapLocation<Pipe>[], isInnerLeft: boolean) {
         if (!areaLine.length) throw new Error('invalid area line');
         // upon each corner check if it is in the line
-        let previous = areaLine[1];
-        let direction = { x: areaLine[1].x - areaLine[0].x, y: areaLine[1].y - areaLine[0].y };
         const innerArea: MapLocation<Pipe>[] = [];
         for (let i = 1; i < areaLine.length - 1; i++) {
             let next = areaLine[i];
-            let nextDirection = { x: next.x - previous.x, y: next.y - previous.y };
             (isInnerLeft ? next.value.leftValues : next.value.rightValues)
                 .filter((x) => !x.value.inLoop)
                 .forEach((x) => innerArea.push(x));
-            // if (nextDirection.x !== direction.x || nextDirection.y !== direction.y) {
-            //     const { x, y } =
-            //         nextDirection.x !== direction.x ? { x: 0, y: -direction.y } : { x: -direction.x, y: 0 };
-            //
-            //     let possibleX = next.x + x;
-            //     let possibleY = next.y + y;
-            //     const possibleLocation = MapEngine.getPoint(map, possibleX, possibleY);
-            //     if (possibleLocation && !areaLine.includes(possibleLocation)) {
-            //         let hasParallelLine = false;
-            //         let nextPoint = possibleLocation;
-            //         while (true) {
-            //             possibleX += x;
-            //             possibleY += y;
-            //             nextPoint = MapEngine.getPoint(map, possibleX, possibleY);
-            //             if (!nextPoint) break;
-            //             if (areaLine.includes(nextPoint)) {
-            //                 hasParallelLine = true;
-            //                 break;
-            //             }
-            //         }
-            //         // check if there is a parallel line in the same direction
-            //         if (hasParallelLine) innerArea.push(possibleLocation);
-            //     }
-            // }
-            direction = nextDirection;
-            previous = next;
         }
         // fill up all extra locations to the innerArea
         let extraCount = 0;
@@ -334,32 +284,27 @@ export namespace Y2023_Day10 {
                     });
             });
         } while (extraCount > 0);
-        innerArea.forEach((pipe) => {
-            if (pipe.value.pipeType.value === '.') pipe.value.isInnerArea = true;
-        });
-        MapEngine.printMap(
-            map,
-            (pipe) => {
-                if (innerArea.includes(pipe)) return 'I';
-                if (areaLine.includes(pipe)) return `${areaLine.indexOf(pipe)}`;
-                return pipe?.value.pipeType.value;
-            },
-            false,
-            false,
-        );
+        innerArea.forEach((pipe) => (pipe.value.isInnerArea = true));
     }
 
     export function part2(lines: string[]): number {
         const map = buildPipeMap(lines);
         buildPipe(map);
         followTrack(map);
+
+        // MapEngine.printMap(
+        //     map,
+        //     (pipe) => {
+        //         if (pipe.value.isInnerArea) return 'I';
+        //         return pipe?.value.pipeType.value;
+        //     },
+        //     false,
+        //     true,
+        // );
         let counter = 0;
         MapEngine.iterateMap(map, (pipe) => {
             if (pipe.value.isInnerArea) counter++;
         });
-        // fill up map while drawing the line
-        // follow the line & check when the lines are next to another line fill up the area
-        // follow line & assign all left & right fields, go from x0, startY towards start point, first line encounter determines whether its left or right
         return counter;
     }
 }
@@ -381,9 +326,9 @@ if (!module.parent) {
 
         // part 1
         let startMs = Date.now();
-        // const part1Result = Y2023_Day10.part1(lines);
-        // console.log('part 1', part1Result, 'ms', Date.now() - startMs);
-        // assert.equal(part1Result, 6613);
+        const part1Result = Y2023_Day10.part1(lines);
+        console.log('part 1', part1Result, 'ms', Date.now() - startMs);
+        assert.equal(part1Result, 6613);
 
         // part 2
         assert.equal(
@@ -419,11 +364,23 @@ L--J.L7...LJS7F-7L7.
             'example part 2',
         );
 
+        const example3 = `FF7FSF7F7F7F7F7F---7
+L|LJ||||||||||||F--J
+FL-7LJLJ||||||LJL-77
+F--JF--7||LJLJ7F7FJ-
+L---JF-JLJ.||-FJLJJ7
+|F|F-JF---7F7-L7L|7|
+|FFJF7L7F-JF7|JL---7
+7-L-JL7||F7|L7F-7F7|
+L.L7LFJ|||||FJL7||LJ
+L7JLJL-JLJLJL--JLJ.L`.split('\n');
+        assert.equal(Y2023_Day10.part2(example3), 10);
+
         startMs = Date.now();
         console.log('part 2 start');
         const part2Result = Y2023_Day10.part2(lines);
         console.log('part 2', part2Result, 'ms', Date.now() - startMs);
-        // assert.equal(part2Result, 0);
+        assert.equal(part2Result, 511);
     }
 
     main().catch((err) => console.error(err));
