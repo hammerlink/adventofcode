@@ -70,6 +70,10 @@ export namespace Y2023_Day12 {
                 }
             }
         }
+        // no more springs should be present
+        for (let i = currentIndex; i < values.length; i++) {
+            if (values[i] === 1) return CheckResult.error;
+        }
         // if it gets here it is always ok
         return CheckResult.ok_complete;
     }
@@ -142,15 +146,40 @@ export namespace Y2023_Day12 {
         }, 0);
     }
 
+    function unFoldSpring(inputLine: string): SpringLine {
+        const pieces = inputLine.split(' ');
+        const baseLine: string = pieces[0];
+        let line = baseLine;
+        if (baseLine.length) for (let i = 0; i < 4; i++) line += '?' + baseLine;
+
+        const values = [0, ...line.split('').map((x) => lineMap[x]), 0]; // add trailing 0s
+
+        const baseRawCheckLine = pieces[1];
+        let baseCheckLine = baseRawCheckLine;
+        if (baseRawCheckLine.length) for (let i = 0; i < 4; i++) baseCheckLine += ',' + baseRawCheckLine;
+
+        const checkLine = baseCheckLine.split(',').map((x) => parseInt(x, 10));
+        return { checkLine, line, values };
+    }
+    export function calculateFoldedSpringLine(line: string): number {
+        const springLine = unFoldSpring(line);
+        return tryAllCombinations(springLine);
+    }
+
     export function part2(lines: string[]): number {
-        return 0;
+        return lines.reduce((t, line) => {
+            const start = Date.now();
+            const result = t + calculateFoldedSpringLine(line);
+            console.log(Date.now() - start, 'ms', line);
+            return result;
+        }, 0);
     }
 }
 
 if (!module.parent) {
     const path = require('path');
 
-    async function main() {
+    const main = async () => {
         const exampleLines = await FileEngine.readFileToLines(
             path.join(path.dirname(__filename), './data/y2023_day12.example'),
             false,
@@ -160,12 +189,13 @@ if (!module.parent) {
             false,
         );
 
-        // assert.equal(Y2023_Day12.calculateSpringLine('???.### 1,1,3'), 1);
-        // assert.equal(Y2023_Day12.calculateSpringLine('.??..??...?##. 1,1,3'), 4);
-        // assert.equal(Y2023_Day12.calculateSpringLine('?#?#?#?#?#?#?#? 1,3,1,6'), 1);
-        // assert.equal(Y2023_Day12.calculateSpringLine('????.#...#... 4,1,1'), 1);
-        // assert.equal(Y2023_Day12.calculateSpringLine('????.######..#####. 1,6,5'), 4);
+        assert.equal(Y2023_Day12.calculateSpringLine('???.### 1,1,3'), 1);
+        assert.equal(Y2023_Day12.calculateSpringLine('.??..??...?##. 1,1,3'), 4);
+        assert.equal(Y2023_Day12.calculateSpringLine('?#?#?#?#?#?#?#? 1,3,1,6'), 1);
+        assert.equal(Y2023_Day12.calculateSpringLine('????.#...#... 4,1,1'), 1);
+        assert.equal(Y2023_Day12.calculateSpringLine('????.######..#####. 1,6,5'), 4);
         assert.equal(Y2023_Day12.calculateSpringLine('?###???????? 3,2,1'), 10);
+        assert.equal(Y2023_Day12.calculateSpringLine('.?.??.?#?#?.???#?? 4,2'), 4);
 
         console.log('part 1 example start');
         assert.equal(Y2023_Day12.part1(exampleLines), 21, 'example part 1');
@@ -177,15 +207,21 @@ if (!module.parent) {
         console.log('part 1', part1Result, 'ms', Date.now() - startMs);
         assert.equal(part1Result, 8193);
 
+        // assert.equal(Y2023_Day12.calculateFoldedSpringLine('???.### 1,1,3'), 1);
+        const start = Date.now();
+        Y2023_Day12.calculateFoldedSpringLine('?###???????? 3,2,1');
+        assert.equal(Date.now() - start < 100, true, 'takes too long ' + (Date.now() - start));
+        // assert.equal(, 16384);
+        // assert.equal(Y2023_Day12.calculateFoldedSpringLine('.??..??...?##. 1,1,3'), 16384);
         // part 2
-        assert.equal(Y2023_Day12.part2(exampleLines), 0, 'example part 2');
-
-        startMs = Date.now();
-        console.log('part 2 start');
-        const part2Result = Y2023_Day12.part2(lines);
-        console.log('part 2', part2Result, 'ms', Date.now() - startMs);
-        assert.equal(part2Result, 0);
-    }
+        // assert.equal(Y2023_Day12.part2(exampleLines), 525152, 'example part 2');
+        //
+        // startMs = Date.now();
+        // console.log('part 2 start');
+        // const part2Result = Y2023_Day12.part2(lines);
+        // console.log('part 2', part2Result, 'ms', Date.now() - startMs);
+        // assert.equal(part2Result, 0);
+    };
 
     main().catch((err) => console.error(err));
 }
