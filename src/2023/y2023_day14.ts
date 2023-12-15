@@ -2,8 +2,37 @@ import { FileEngine } from '../engine/file.engine';
 import * as assert from 'assert';
 
 export namespace Y2023_Day14 {
+    function invertLines(lines: string[]): string[] {
+        const output: string[] = [];
+        const lineLength = lines[0].length;
+        for (let i = 0; i < lineLength; i++) {
+            let newLine = '';
+            lines.forEach((line) => (newLine += line[i]));
+            output.push(newLine);
+        }
+        return output;
+    }
+    function pullAllRocks(line: string): string {
+        const pieces = line.split('#');
+        return pieces
+            .map((piece) => {
+                const length = piece.length;
+                const countRocks = Array.from(piece.matchAll(/O/g)).length;
+                let output = '';
+                for (let i = 0; i < countRocks; i++) output += 'O';
+                while (output.length < length) output += '.';
+                return output;
+            })
+            .join('#');
+    }
     export function part1(lines: string[]): number {
-        return 0;
+        const invertedLines = invertLines(lines);
+        const pulledLines = invertedLines.map(pullAllRocks);
+        const originalLines = invertLines(pulledLines);
+        return originalLines.reduce(
+            (total, line, index) => total + Array.from(line.matchAll(/O/g)).length * (lines.length - index),
+            0,
+        );
     }
     export function part2(lines: string[]): number {
         return 0;
@@ -24,7 +53,8 @@ if (!module.parent) {
         );
 
         console.log('part 1 example start');
-        assert.equal(Y2023_Day14.part1(exampleLines), 0, 'example part 1');
+        assert.equal(Y2023_Day14.part1(exampleLines), 136, 'example part 1');
+        // process.exit(1);
 
         // part 1
         let startMs = Date.now();
