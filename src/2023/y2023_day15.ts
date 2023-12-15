@@ -2,8 +2,18 @@ import { FileEngine } from '../engine/file.engine';
 import * as assert from 'assert';
 
 export namespace Y2023_Day15 {
+    export function calculateHash(line: string): number {
+        let currentValue = 0;
+        for (let i = 0; i < line.length; i++) {
+            currentValue = (currentValue + line.charCodeAt(i)) * 17;
+            currentValue = currentValue % 256;
+        }
+        return currentValue;
+    }
     export function part1(lines: string[]): number {
-        return 0;
+        return lines.reduce((t, line) => {
+            return t + line.split(',').reduce((t1, v) => t1 + calculateHash(v), 0);
+        }, 0);
     }
 
     export function part2(lines: string[]): number {
@@ -24,8 +34,11 @@ if (!module.parent) {
             false,
         );
 
+        assert.equal(Y2023_Day15.calculateHash('HASH'), 52);
+        assert.equal(Y2023_Day15.calculateHash('rn=1'), 30);
+
         console.log('part 1 example start');
-        assert.equal(Y2023_Day15.part1(exampleLines), 0, 'example part 1');
+        assert.equal(Y2023_Day15.part1(exampleLines), 1320, 'example part 1');
 
         // part 1
         let startMs = Date.now();
