@@ -85,23 +85,31 @@ export namespace Y2023_Day16 {
         }
         return { newBeams: [beam], hasEnergized };
     }
-    function executeBeam(mirrorMap: MirrorMap) {
-        let beams = [...executeBeamStep(mirrorMap, startBeam(mirrorMap), true).newBeams];
-        let noActionCounter = 0;
+    function executeBeam(mirrorMap: MirrorMap, startBeam: Beam) {
+        let beams = [...executeBeamStep(mirrorMap, startBeam, true).newBeams];
         while (beams.length) {
-            let energizeCounter = 0;
             beams.forEach((beam) => {
-                const { newBeams, hasEnergized } = executeBeamStep(mirrorMap, beam);
-                if (hasEnergized) energizeCounter++;
+                const { newBeams } = executeBeamStep(mirrorMap, beam);
                 beams = [...beams.filter((x) => x !== beam), ...newBeams].filter((x) => !!x);
             });
-            if (energizeCounter === 0) {
-                console.log();
-                MapEngine.printMap(mirrorMap, (value) => (value.value.isEnergized ? '#' : '.'));
-                noActionCounter++;
-                if (noActionCounter > 100) break;
-            } else noActionCounter = 0;
+            if (!beams.length) break;
         }
+    }
+    function resetMap(mirrorMap: MirrorMap) {
+        MapEngine.iterateMap(mirrorMap, (cell) => {
+            cell.value.isEnergized = undefined;
+            cell.value.entries = [];
+        });
+    }
+    function calculateEntry(mirrorMap: MirrorMap, x: number, y: number, direction: Directions): number {
+        resetMap(mirrorMap);
+        const beam: Beam = { location: MapEngine.getPoint(mirrorMap, x, y), direction };
+        executeBeam(mirrorMap, beam);
+        let energyCounter = 0;
+        MapEngine.iterateMap(mirrorMap, (location) => {
+            if (location.value.isEnergized) energyCounter++;
+        });
+        return energyCounter;
     }
     function buildMap(lines: string[]): MirrorMap {
         const map: MirrorMap = MapEngine.newMap<Mirror>();
@@ -113,22 +121,30 @@ export namespace Y2023_Day16 {
         }
         return map;
     }
-    function startBeam(mirrorMap: MirrorMap): Beam {
-        const location = MapEngine.getPoint(mirrorMap, 0, 0);
-        location.value.isEnergized = true;
-        return { location, direction: 'east' };
+    function getBestEntryScore(mirrorMap: MirrorMap): number {
+        let output: number | undefined;
+        const checkScore = (input: number) => {
+            if (output === undefined || input > output) output = input;
+        };
+        const {minX, maxX, minY, maxY} = mirrorMap;
+        for (let x = minX; x <= maxX; x++) {
+            checkScore(calculateEntry(mirrorMap, x, minY, 'south'));
+            checkScore(calculateEntry(mirrorMap, x, maxY, 'north'));
+        }
+        for (let y = minY; y <= maxY; y++) {
+            checkScore(calculateEntry(mirrorMap, minX, y, 'south'));
+            checkScore(calculateEntry(mirrorMap, maxX, y, 'north'));
+        }
+
+        return output;
     }
     export function part1(lines: string[]): number {
         const mirrorMap = buildMap(lines);
-        executeBeam(mirrorMap);
-        let energyCounter = 0;
-        MapEngine.iterateMap(mirrorMap, (location) => {
-            if (location.value.isEnergized) energyCounter++;
-        });
-        return energyCounter;
+        return calculateEntry(mirrorMap, 0, 0, 'east');
     }
     export function part2(lines: string[]): number {
-        return 0;
+        const mirrorMap = buildMap(lines);
+        return getBestEntryScore(mirrorMap);
     }
 }
 
@@ -153,15 +169,15 @@ if (!module.parent) {
         console.log('part 1 start');
         const part1Result = Y2023_Day16.part1(lines);
         console.log('part 1', part1Result, 'ms', Date.now() - startMs);
-        assert.equal(part1Result, 509167);
+        assert.equal(part1Result, 8323);
         // part 2
-        assert.equal(Y2023_Day16.part2(exampleLines), 0, 'example part 2');
+        assert.equal(Y2023_Day16.part2(exampleLines), 51, 'example part 2');
 
         startMs = Date.now();
         console.log('part 2 start');
         const part2Result = Y2023_Day16.part2(lines);
         console.log('part 2', part2Result, 'ms', Date.now() - startMs);
-        assert.equal(part2Result, 0);
+        assert.equal(part2Result, 8491);
     };
 
     main().catch((err) => console.error(err));
