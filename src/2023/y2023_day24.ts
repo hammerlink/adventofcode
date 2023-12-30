@@ -29,11 +29,12 @@ export namespace Y2023_Day24 {
         b: BaseHailStone;
     };
     type Parameters2D = { a: number; b: number };
+    type RockHailStone = HailStone & { duration: number; index: number };
     type Rock = {
         position: Location;
         direction: Location;
         parameters2d: Parameters2D | null;
-        hailStoneCollisions: Array<HailStone & { duration: number; index: number }>;
+        hailStoneCollisions: RockHailStone[];
         timeNs: number;
     };
 
@@ -168,13 +169,6 @@ export namespace Y2023_Day24 {
     }
     function findRockPath(rock: Rock, hailStones: HailStone[]): Rock | null {
         if (rock.hailStoneCollisions.length === hailStones.length) return rock;
-        if (rock.hailStoneCollisions.length > 2)
-            console.log(
-                rock.hailStoneCollisions.reduce(
-                    (t, hailStone) => t + ` ${hailStone.index}@${hailStone.duration}`,
-                    `${rock.direction.x},${rock.direction.y},${rock.direction.z}`,
-                ),
-            );
         const currentTimeNs = rock.timeNs;
         // const position = rock.position;
         for (let i = 0; i < hailStones.length; i++) {
@@ -196,38 +190,62 @@ export namespace Y2023_Day24 {
         }
         return null;
     }
+    function tryRockPath(
+        hailStone: RockHailStone,
+        otherHailStone: RockHailStone,
+        counter: number,
+        hailStones: HailStone[],
+    ): Rock | null {
+        const position = applyDuration(hailStone, 1);
+        const nextPosition = applyDuration(otherHailStone, counter + 1);
+        const direction: Location = {
+            x: (nextPosition.x - position.x) / counter,
+            y: (nextPosition.y - position.y) / counter,
+            z: (nextPosition.z - position.z) / counter,
+        };
+        const basePosition = applyDuration({ position, direction }, -1);
+        const rawRock: Rock = {
+            hailStoneCollisions: [
+                { ...hailStone, duration: 1 },
+                { ...otherHailStone, duration: 1 + counter },
+            ],
+            position: basePosition,
+            direction,
+            timeNs: 1 + counter,
+            parameters2d: get2DParameters({ position: basePosition, direction }),
+        };
+        for (let i = 0; i < hailStones.length; i++) {
+            if (i === hailStone.index || i === otherHailStone.index) continue;
+            if (!getNextCollision(rawRock, hailStones[i], counter + 1)) return null;
+        }
+        return findRockPath(rawRock, hailStones);
+    }
     function tryAllRockPaths(hailStones: HailStone[]): Rock {
         let counter = 1;
+        // real test cna start at 135
         while (true) {
+            if (counter === 3) counter = 500; // skip already done checks
             if (counter % 100 === 0) console.log('counter', counter);
-            console.log('counter', counter, hailStones.length);
+            // todo reduce the amount of paths to check
+            // => check how many are in the correct direction
             for (let i = 0; i < hailStones.length; i++) {
                 const hailStone = hailStones[i];
-                const position = applyDuration(hailStone, 1);
-                for (let j = 0; j < hailStones.length; j++) {
-                    if (j === i) continue;
+                for (let j = i + 1; j < hailStones.length; j++) {
                     const otherHailStone = hailStones[j];
-                    const nextPosition = applyDuration(otherHailStone, 1 + counter);
-                    const direction: Location = {
-                        x: (nextPosition.x - position.x) / counter,
-                        y: (nextPosition.y - position.y) / counter,
-                        z: (nextPosition.z - position.z) / counter,
-                    };
-                    const basePosition = applyDuration({ position, direction }, -1);
-                    const rock = findRockPath(
-                        {
-                            hailStoneCollisions: [
-                                { ...hailStone, index: i, duration: 1 },
-                                { ...otherHailStone, index: j, duration: 1 + counter },
-                            ],
-                            position: basePosition,
-                            direction,
-                            timeNs: 1 + counter,
-                            parameters2d: get2DParameters({ position: basePosition, direction }),
-                        },
+                    const firstRock = tryRockPath(
+                        { ...hailStone, index: i, duration: 0 },
+                        { ...otherHailStone, index: j, duration: 0 },
+                        counter,
                         hailStones,
                     );
-                    if (rock !== null) return rock;
+                    if (firstRock !== null) return firstRock;
+                    const secondRock = tryRockPath(
+                        { ...otherHailStone, index: j, duration: 0 },
+                        { ...hailStone, index: i, duration: 0 },
+                        counter,
+                        hailStones,
+                    );
+                    if (secondRock !== null) return secondRock;
                 }
             }
             counter++;
