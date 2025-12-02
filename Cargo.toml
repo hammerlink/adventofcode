@@ -3,4 +3,5 @@
 members = [
     "aoc-2022-rust",
     "aoc-2023-rust",
+    "aoc-2025-rust",
 ]
