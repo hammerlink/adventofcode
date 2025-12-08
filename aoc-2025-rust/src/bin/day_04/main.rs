@@ -117,7 +117,7 @@ mod part1 {
             }
             output
         }
-        pub fn count_eligible_paper_rolls(&self) -> usize {
+        pub fn get_eligible_paper_rolls(&self) -> Vec<&Cell<CellType>> {
             self.iter_all()
                 .filter(|c| {
                     c.value == CellType::PaperRoll
@@ -128,16 +128,33 @@ mod part1 {
                             .count()
                             < 4
                 })
-                .count()
+                .collect()
         }
     }
 
     pub fn execute_part1(input: &str) -> usize {
-        PaperRollDiagram::new(input).count_eligible_paper_rolls()
+        PaperRollDiagram::new(input)
+            .get_eligible_paper_rolls()
+            .len()
     }
 
     pub fn execute_part2(input: &str) -> u64 {
-        0
+        let mut diagram = PaperRollDiagram::new(input);
+        let mut removed_counter = 0;
+        let mut has_moved = true;
+        while has_moved {
+            let rolls_to_move: Vec<_> = diagram
+                .get_eligible_paper_rolls()
+                .iter()
+                .map(|roll| (roll.x, roll.y))
+                .collect();
+            has_moved = !rolls_to_move.is_empty();
+            for (x, y) in rolls_to_move {
+                diagram.set_value(x, y, CellType::Empty);
+                removed_counter += 1;
+            }
+        }
+        removed_counter
     }
 }
 
@@ -152,21 +169,21 @@ fn part1_example() {
 fn part1_input() {
     let result = part1::execute_part1(INPUT);
     println!("{result}");
-    // assert_eq!(result, 357);
+    assert_eq!(result, 1384);
 }
 
 #[test]
 fn part2_example() {
     let result = part1::execute_part2(EXAMPLE_INPUT);
     println!("{result}");
-    assert_eq!(result, 3121910778619);
+    assert_eq!(result, 43);
 }
 
 #[test]
 fn part2_input() {
     let result = part1::execute_part2(INPUT);
     println!("{result}");
-    assert_eq!(result, 3121910778619);
+    assert_eq!(result, 8013);
 }
 
 fn main() {
