@@ -15,6 +15,7 @@ mod part1 {
     struct Value {
         v_type: Tachyon,
         has_split: bool,
+        paths: Option<usize>,
     }
 
     impl Tachyon {
@@ -26,6 +27,8 @@ mod part1 {
                 _ => panic!("unknown char"),
             }
         }
+
+        #[allow(dead_code)]
         fn to_string(&self) -> char {
             match self {
                 Tachyon::Start => 'S',
@@ -41,6 +44,7 @@ mod part1 {
         start_x: i32,
         start_y: i32,
         split_counter: usize,
+        timeline_counter: usize,
     }
 
     impl TachyonMap {
@@ -80,6 +84,36 @@ mod part1 {
             true
         }
 
+        fn explore_rays(&mut self, start: Position) -> usize {
+            if !self.map.has_value(start.x, start.y) {
+                return 0;
+            }
+            {
+                let current = self.map.get_value(start.x, start.y);
+                if let Some(paths) = current.value.paths {
+                    return paths;
+                }
+            }
+
+            let x = start.x;
+            let mut y = start.y + 1;
+            let mut next = self.map.try_get_value(x, y);
+            let mut total = 1;
+            while let Some(cell) = next {
+                if cell.value.v_type == Tachyon::Splitter {
+                    self.timeline_counter += 1;
+                    total = self.explore_rays(Position { x: x - 1, y });
+                    total += self.explore_rays(Position { x: x + 1, y });
+                    break;
+                }
+                y += 1;
+                next = self.map.try_get_value(x, y);
+            }
+            self.map.get_value_mut(start.x, start.y).value.paths = Some(total);
+            total
+        }
+
+        #[allow(dead_code)]
         fn print(&self) {
             for y in self.map.boundaries.min_y..=self.map.boundaries.max_y {
                 let mut line: String = "".to_string();
@@ -101,6 +135,7 @@ mod part1 {
             start_x: 0,
             start_y: 0,
             split_counter: 0,
+            timeline_counter: 0,
         };
         for (y, line) in input.lines().enumerate() {
             for (x, c) in line.chars().enumerate() {
@@ -115,6 +150,7 @@ mod part1 {
                     Value {
                         v_type: tachyon,
                         has_split: false,
+                        paths: None,
                     },
                 );
             }
@@ -133,8 +169,12 @@ mod part1 {
         map.split_counter
     }
 
-    pub fn execute_part2(_input: &str) -> u64 {
-        0
+    pub fn execute_part2(input: &str) -> usize {
+        let mut map = parse_input(input);
+        map.explore_rays(Position {
+            x: map.start_x,
+            y: map.start_y,
+        })
     }
 }
 
@@ -156,10 +196,12 @@ fn part1_input() {
 fn part2_example() {
     let result = part1::execute_part2(EXAMPLE_INPUT);
     println!("{result}");
+    assert_eq!(result, 40);
 }
 #[test]
 fn part2_input() {
     let result = part1::execute_part2(INPUT);
+    println!("{result}");
 }
 
 fn main() {
