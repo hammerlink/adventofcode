@@ -140,7 +140,77 @@ mod part1 {
             .unwrap()
     }
 
-    pub fn execute_part2(_input: &str) -> usize {
+    struct SingleCircuit {
+        all: HashSet<String>,
+        connected: HashSet<String>,
+        residu: Vec<(String, String)>,
+    }
+
+    impl SingleCircuit {
+        pub fn new() -> Self {
+            SingleCircuit {
+                all: HashSet::new(),
+                connected: HashSet::new(),
+                residu: vec![],
+            }
+        }
+
+        pub fn add(&mut self, new: String, other: Option<String>) {
+            self.all.insert(new.clone());
+            if let Some(other) = other {
+                if self.connected.contains(&other) {
+                    self.connected.insert(new);
+                } else {
+                    self.residu.push((new, other.clone()));
+                }
+            } else {
+                self.connected.insert(new);
+            }
+        }
+
+        pub fn try_clean_residu(&mut self) -> bool {
+            let mut to_remove = Vec::new();
+            for (new, other) in self.residu.iter() {
+                if self.connected.contains(other) {
+                    self.connected.insert(new.clone());
+                    to_remove.push(new.clone());
+                }
+            }
+            let has_added = !to_remove.is_empty();
+            for key in to_remove {
+                self.residu.retain(|(new, _)| new != &key);
+            }
+            has_added
+        }
+    }
+
+    pub fn execute_part2(input: &str) -> usize {
+        let junction_boxes: Vec<JunctionBox> = input.lines().map(JunctionBox::new).collect();
+        let boxes: Boxes = junction_boxes
+            .into_iter()
+            .map(|junction_box| (junction_box.key.clone(), junction_box))
+            .collect();
+        let mut distances = get_distances(&boxes);
+        distances.sort_by(|a, b| a.distance.total_cmp(&b.distance));
+        let mut single_circuit = SingleCircuit::new();
+
+        let first = distances.first().unwrap();
+        single_circuit.add(first.box_1_key.clone(), None);
+        single_circuit.add(first.box_2_key.clone(), None);
+
+        for d in distances.iter().skip(1) {
+            single_circuit.add(d.box_1_key.clone(), Some(d.box_2_key.clone()));
+            single_circuit.add(d.box_2_key.clone(), Some(d.box_1_key.clone()));
+            loop {
+                if !single_circuit.try_clean_residu() {
+                    break;
+                }
+            }
+            if single_circuit.connected.len() == boxes.len() {
+                return boxes.get(&d.box_1_key).unwrap().x * boxes.get(&d.box_2_key).unwrap().x;
+            }
+        }
+
         0
     }
 }
@@ -162,11 +232,13 @@ fn part1_input() {
 fn part2_example() {
     let result = part1::execute_part2(EXAMPLE_INPUT);
     println!("{result}");
+    assert_eq!(result, 25272);
 }
 #[test]
 fn part2_input() {
     let result = part1::execute_part2(INPUT);
     println!("{result}");
+    assert!(result > 17001512);
 }
 
 fn main() {
