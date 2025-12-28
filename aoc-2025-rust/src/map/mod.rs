@@ -49,6 +49,12 @@ pub struct Map2d<V> {
     pub boundaries: Boundaries,
 }
 
+impl<V> Default for Map2d<V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<V> Map2d<V> {
     pub fn new() -> Self {
         Map2d {
