@@ -3,6 +3,7 @@ const EXAMPLE_INPUT: &str = include_str!("./y2025_day10.example");
 const INPUT: &str = include_str!("./y2025_day10.input");
 
 mod part1 {
+    use rayon::prelude::*;
     use std::collections::HashMap;
 
     pub type Leds = Vec<bool>;
@@ -97,7 +98,12 @@ mod part1 {
         }
 
         fn get_fastest_configuration(&mut self) -> usize {
-            println!("starting new check");
+            use std::sync::atomic::{AtomicUsize, Ordering};
+
+            static COUNTER: AtomicUsize = AtomicUsize::new(0);
+            let current_count = COUNTER.fetch_add(1, Ordering::Relaxed);
+
+            println!("starting new check #{}", current_count);
             self.buttons.sort_by(|a, b| {
                 // First, sort by length (largest first)
                 let len_cmp = b.len().cmp(&a.len());
@@ -118,7 +124,7 @@ mod part1 {
                     .unwrap_or(0);
                 b_joltage_sum.cmp(&a_joltage_sum)
             });
-            JoltageFinder::new(MachineSettings {
+            let result = JoltageFinder::new(MachineSettings {
                 joltages: self.joltage_requirements.clone(),
             })
             .get_best_score(
@@ -128,7 +134,9 @@ mod part1 {
                 self.buttons.iter().map(|b| Button::new(b)).collect(),
                 0,
             )
-            .unwrap()
+            .unwrap();
+            println!("finished #{} with {}", current_count, result);
+            result
         }
     }
 
@@ -243,7 +251,6 @@ mod part1 {
 
         fn push_button(&self, button: &Button, joltages: &[usize], amount: usize) -> Option<Self> {
             let mut output = self.clone();
-            // println!("pushing button {:?}", button.indices);
 
             for b in button.indices.iter() {
                 output.joltages[*b] += amount;
@@ -305,6 +312,51 @@ mod part1 {
         buttons
     }
 
+    fn can_be_fixed(buttons: &[Button], required_joltages: &[usize]) -> bool {
+        required_joltages.iter().enumerate().all(|(i, amount)| {
+            if *amount == 0 {
+                return true;
+            }
+
+            buttons.iter().any(|b| b.indices.contains(&i))
+        })
+    }
+
+    fn calculate_optimistic_required_steps(
+        buttons: &[Button],
+        required_joltages: &[usize],
+    ) -> usize {
+        let mut remaining_joltages = required_joltages.to_vec();
+        let mut total_steps = 0;
+
+        while remaining_joltages.iter().any(|&x| x > 0) {
+            let min_joltage_index = remaining_joltages
+                .iter()
+                .enumerate()
+                .filter(|(_, v)| **v > 0)
+                .min_by_key(|(_, v)| **v)
+                .map(|(i, _)| i)
+                .unwrap();
+            let amount = remaining_joltages[min_joltage_index];
+            let mut related_indices: Vec<usize> = vec![min_joltage_index];
+            buttons.iter().for_each(|button| {
+                if button.indices.contains(&min_joltage_index) {
+                    button.indices.iter().for_each(|i| {
+                        if !related_indices.contains(i) {
+                            related_indices.push(*i);
+                        }
+                    });
+                }
+            });
+            for i in related_indices {
+                remaining_joltages[i] = remaining_joltages[i].saturating_sub(amount);
+            }
+            total_steps += amount;
+        }
+
+        total_steps
+    }
+
     struct JoltageFinder {
         current_best: Option<usize>,
         required_settings: MachineSettings,
@@ -344,16 +396,6 @@ mod part1 {
             buttons: Vec<Button>,
             step: usize,
         ) -> Option<usize> {
-            // println!(
-            //     "attempt: {} {:?} -> {:?}- buttons {:?}",
-            //     step,
-            //     settings.joltages,
-            //     self.get_current_required_joltages(&settings),
-            //     buttons
-            //         .iter()
-            //         .map(|x| x.indices.clone())
-            //         .collect::<Vec<_>>()
-            // );
             if settings.is_equal(&self.required_settings) {
                 self.try_set_best_score(step);
                 return Some(step);
@@ -368,47 +410,30 @@ mod part1 {
             let required_joltages = self.get_current_required_joltages(&settings);
             let mut buttons = get_updated_buttons(&buttons, &required_joltages);
 
-            // Sort buttons: required first, then by maximum (descending)
-            buttons.sort_by(|a, b| {
-                // First, sort by is_required (required buttons first)
-                let required_cmp = b.is_required.cmp(&a.is_required);
-                if required_cmp != std::cmp::Ordering::Equal {
-                    return required_cmp;
-                }
+            if !can_be_fixed(&buttons, &required_joltages) {
+                return None;
+            }
 
-                // Then sort by maximum (descending - highest first)
-                b.maximum.cmp(&a.maximum)
-            });
+            if let Some(button) = buttons.iter().find(|x| x.is_required && x.maximum > 0)
+                && let Some(new_settings) =
+                    settings.push_button(button, &self.required_settings.joltages, button.maximum)
+            {
+                let mut buttons = buttons.clone();
+                buttons.retain(|x| x.indices != button.indices);
+                self.get_best_score(new_settings, buttons, step + button.maximum);
+
+                return self.current_best;
+            }
+            buttons.sort_by_key(|x| x.maximum);
 
             for i in 0..buttons.len() {
-                let button = buttons[i].clone();
-                if button.is_required {
-                    if let Some(new_settings) = settings.push_button(
-                        &buttons[i],
-                        &self.required_settings.joltages,
-                        button.maximum,
-                    ) {
-                        self.get_best_score(
-                            new_settings,
-                            buttons[i + 1..].to_vec(),
-                            step + button.maximum,
-                        );
-                    }
-                } else {
-                    let max = buttons[i].maximum;
-                    for steps in 0..max {
-                        let steps = max - steps;
-                        if let Some(new_settings) = settings.push_button(
-                            &buttons[i],
-                            &self.required_settings.joltages,
-                            steps,
-                        ) {
-                            self.get_best_score(
-                                new_settings,
-                                buttons[i + 1..].to_vec(),
-                                step + steps,
-                            );
-                        }
+                let max = buttons[i].maximum;
+                for steps in 0..max {
+                    let steps = max - steps;
+                    if let Some(new_settings) =
+                        settings.push_button(&buttons[i], &self.required_settings.joltages, steps)
+                    {
+                        self.get_best_score(new_settings, buttons[i + 1..].to_vec(), step + steps);
                     }
                 }
             }
@@ -434,6 +459,7 @@ mod part1 {
         // average 404
         input
             .lines()
+            .par_bridge()
             .map(|line| Machine::new(line).get_fastest_configuration())
             .sum()
     }
