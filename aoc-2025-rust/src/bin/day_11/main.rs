@@ -3,10 +3,7 @@ const EXAMPLE_INPUT: &str = include_str!("./y2025_day11.example");
 const INPUT: &str = include_str!("./y2025_day11.input");
 
 mod part1 {
-    use std::{
-        cell::RefCell,
-        collections::{HashMap, HashSet},
-    };
+    use std::collections::{HashMap, HashSet};
 
     const YOU: &str = "you";
     const OUT: &str = "out";
@@ -14,8 +11,6 @@ mod part1 {
     struct ServerRack {
         id: String,
         connections: HashSet<String>, // TODO not all connections are here yet
-        out_distance: RefCell<Option<usize>>,
-        out_calculation_triggered: RefCell<bool>,
     }
 
     impl ServerRack {
@@ -30,48 +25,23 @@ mod part1 {
             ServerRack {
                 id: id.to_string(),
                 connections,
-                out_distance: None.into(),
-                out_calculation_triggered: false.into(),
             }
         }
-        fn calculate_out_distance(&self, map: &HashMap<String, ServerRack>) -> Option<usize> {
+        fn count_out_distances(&self, map: &HashMap<String, ServerRack>) -> usize {
             if self.id == OUT {
-                return Some(0);
+                panic!("should not get here");
             }
-            if *self.out_calculation_triggered.borrow() {
-                return *self.out_distance.borrow(); // not entirely sure about this, potential paths missed?
-            }
-            // check if is out
-            *self.out_calculation_triggered.borrow_mut() = true;
+            let mut count = 0;
 
             for connection_id in self.connections.iter() {
-                println!("id: {} -> connection {}", self.id, connection_id);
                 if connection_id == OUT {
-                    *self.out_distance.borrow_mut() = Some(1);
-                    break;
-                } else if let Some(connection) = map.get(connection_id)
-                    && let Some(distance) = connection.calculate_out_distance(map)
-                {
-                    let out_distance = *self.out_distance.borrow();
-                    if out_distance.is_none() || distance < out_distance.unwrap() {
-                        *self.out_distance.borrow_mut() = Some(distance + 1);
-                        println!(
-                            "id: {} -> connection {}: distance: {}",
-                            self.id,
-                            connection_id,
-                            distance + 1,
-                        );
-                    }
+                    count += 1;
+                } else if let Some(connection) = map.get(connection_id) {
+                    count += connection.count_out_distances(map);
                 }
-                println!("id: {} -> connection {} finished", self.id, connection_id);
             }
 
-            println!(
-                "id: {} distance: {}",
-                self.id,
-                self.out_distance.borrow().unwrap_or(100)
-            );
-            *self.out_distance.borrow()
+            count
         }
     }
 
@@ -82,7 +52,7 @@ mod part1 {
             .map(|server_rack| (server_rack.id.clone(), server_rack))
             .collect();
         let start = server_rack_map.get(YOU).expect("you to be found");
-        start.calculate_out_distance(&server_rack_map).unwrap()
+        start.count_out_distances(&server_rack_map)
     }
 
     #[allow(unused)]
@@ -102,6 +72,7 @@ fn part1_example() {
 fn part1_input() {
     let result = part1::execute_part1(INPUT);
     println!("{result}");
+    assert_eq!(result, 539);
 }
 
 #[test]
