@@ -110,7 +110,27 @@ mod part1 {
             }
         }
     }
-    struct PresentArea {}
+    struct PresentArea {
+        y_width: usize,
+        x_length: usize,
+        /// the index is equal to the present id
+        required_presents: Vec<usize>,
+    }
+    impl PresentArea {
+        fn new(line: &str) -> Self {
+            let (dimension_str, present_str) = line.split_once(": ").expect("is valid dimension");
+            let (y_str, x_str) = dimension_str.split_once("x").expect("valid dimension part");
+            PresentArea {
+                y_width: y_str.parse().expect("valid y"),
+                x_length: x_str.parse().expect("valid x"),
+                required_presents: present_str
+                    .split(" ")
+                    .map(|x| x.parse().expect("valid required present"))
+                    .collect(),
+            }
+        }
+    }
+
     pub fn execute_part1(input: &str) -> usize {
         let mut presents: Vec<Present> = vec![];
         let mut cached_lines: Vec<&str> = vec![];
@@ -124,8 +144,11 @@ mod part1 {
                 cached_lines.push(line);
             }
         }
-
-        presents.first().unwrap().print_variants();
+        let present_areas = cached_lines
+            .into_iter()
+            .map(PresentArea::new)
+            .collect::<Vec<_>>();
+        assert_eq!(presents.first().unwrap().variants.len(), 8);
         0
     }
 
