@@ -77,10 +77,14 @@ mod part1 {
             assert!(lines.len() == 4);
             let id: usize = lines[0].split_once(":").unwrap().0.parse().unwrap();
             let mut variants = vec![];
-            let mut variant = vec![];
+            let mut variant: Vec<Vec<bool>> = vec![];
             for line in lines.iter().skip(1) {
                 variant.push(line.chars().map(|x| x == '#').collect());
             }
+
+            assert_eq!(variant.len(), 3);
+            assert_eq!(variant[0].len(), 3);
+
             fn push(variant: Vec<Vec<bool>>, variants: &mut Vec<Vec<Vec<bool>>>) {
                 if !variants.iter().any(|x| x.is_equal(&variant)) {
                     variants.push(variant);
@@ -110,23 +114,82 @@ mod part1 {
             }
         }
     }
+    struct Position {
+        x: i32,
+        y: i32,
+    }
+    impl Position {
+        fn apply_relative_position(&self, x: usize, y: usize) -> Position {
+            Position {
+                x: self.x + x as i32,
+                y: self.y + y as i32,
+            }
+        }
+    }
     struct PresentArea {
         y_width: usize,
         x_length: usize,
         /// the index is equal to the present id
         required_presents: Vec<usize>,
+        /// Y-axis < X-axis >
+        area: Vec<Vec<bool>>,
     }
     impl PresentArea {
         fn new(line: &str) -> Self {
             let (dimension_str, present_str) = line.split_once(": ").expect("is valid dimension");
             let (y_str, x_str) = dimension_str.split_once("x").expect("valid dimension part");
+            let y_width = y_str.parse().expect("valid y");
+            let x_length = x_str.parse().expect("valid x");
             PresentArea {
-                y_width: y_str.parse().expect("valid y"),
-                x_length: x_str.parse().expect("valid x"),
+                y_width,
+                x_length,
                 required_presents: present_str
                     .split(" ")
                     .map(|x| x.parse().expect("valid required present"))
                     .collect(),
+                area: vec![vec![false; x_length]; y_width],
+            }
+        }
+
+        fn get_value(&self, p: &Position) -> Option<bool> {
+            if p.x < 0 || p.y < 0 || p.x >= self.x_length as i32 || p.y >= self.y_width as i32 {
+                return None;
+            }
+            Some(self.area[p.y as usize][p.x as usize])
+        }
+
+        /// position is in top left
+        fn try_place_present(&mut self, p: &Position, present_variant: &[Vec<bool>]) -> bool {
+            let mut to_update: Vec<(usize, usize)> = vec![];
+            for y in 0..3 {
+                for x in 0..3 {
+                    if present_variant[y][x]
+                        && let position = p.apply_relative_position(x, y)
+                        && let Some(cell_value) = self.get_value(&position)
+                    {
+                        if cell_value {
+                            return false;
+                        } else {
+                            to_update.push((position.x as usize, position.y as usize));
+                        }
+                    }
+                }
+            }
+            to_update.iter().for_each(|(x, y)| self.area[*y][*x] = true);
+
+            true
+        }
+        /// position is in top left
+        fn remove_present(&mut self, p: &Position, present_variant: &[Vec<bool>]) {
+            for y in 0..3 {
+                for x in 0..3 {
+                    if present_variant[y][x]
+                        && let position = p.apply_relative_position(x, y)
+                        && let Some(_) = self.get_value(&position)
+                    {
+                        self.area[position.y as usize][position.x as usize] = false;
+                    }
+                }
             }
         }
     }
@@ -149,6 +212,16 @@ mod part1 {
             .map(PresentArea::new)
             .collect::<Vec<_>>();
         assert_eq!(presents.first().unwrap().variants.len(), 8);
+
+        // try fill from top left to bottom right
+        // fill as close as possible to the last placed piece
+        // try all pieces as a first, try as much out of scope as possible
+        // everything is 3x3
+        // start on last placed location
+        // move 3 down
+        // move 1 to the right, and attempt 3 down each time
+        // in theory it should work each time
+        // do this for every available piece
         0
     }
 
