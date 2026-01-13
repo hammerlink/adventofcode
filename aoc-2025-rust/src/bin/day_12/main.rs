@@ -10,6 +10,8 @@ mod part1 {
     // get an optimistic score?
     // 2d array
 
+    use std::cell::RefCell;
+
     trait Plane<T> {
         fn print(&self);
         fn is_equal(&self, other: &T) -> bool;
@@ -42,9 +44,9 @@ mod part1 {
             let len_x = self.first().unwrap().len();
             for x in 0..len_x {
                 let mut line: Vec<bool> = vec![];
-                for y in 0..self.len() {
+                (0..self.len()).for_each(|y| {
                     line.push(self[y][x]);
-                }
+                });
                 output.push(line);
             }
 
@@ -71,6 +73,7 @@ mod part1 {
         /// all rotated and flipped versions
         /// Variants < Y-axis < X-axis > > >
         variants: Vec<Vec<Vec<bool>>>,
+        required_cells: usize,
     }
     impl Present {
         fn new(lines: &[&str]) -> Self {
@@ -81,6 +84,14 @@ mod part1 {
             for line in lines.iter().skip(1) {
                 variant.push(line.chars().map(|x| x == '#').collect());
             }
+            let mut required_cells = 0_usize;
+            variant.iter().for_each(|y| {
+                y.iter().for_each(|v| {
+                    if *v {
+                        required_cells += 1;
+                    }
+                })
+            });
 
             assert_eq!(variant.len(), 3);
             assert_eq!(variant[0].len(), 3);
@@ -102,9 +113,14 @@ mod part1 {
             push(variant.clone(), &mut variants);
             push(variant.flip_y(), &mut variants);
 
-            Present { id, variants }
+            Present {
+                id,
+                variants,
+                required_cells,
+            }
         }
 
+        #[allow(unused)]
         fn print_variants(&self) {
             println!("present id: {}", self.id);
             for (i, variant) in self.variants.iter().enumerate() {
@@ -114,6 +130,7 @@ mod part1 {
             }
         }
     }
+    #[derive(Debug, Clone)]
     struct Position {
         x: i32,
         y: i32,
@@ -125,14 +142,41 @@ mod part1 {
                 y: self.y + y as i32,
             }
         }
+        fn next(&self, present_area: &PresentArea) -> Option<Position> {
+            let mut next_x = self.x;
+            let mut next_y = self.y;
+            next_x += 1;
+            if next_x > present_area.x_length as i32 - 2 {
+                next_x = -1;
+                next_y += 1;
+                if next_y > present_area.y_width as i32 - 2 {
+                    return None;
+                }
+            }
+
+            Some(Position {
+                x: next_x,
+                y: next_y,
+            })
+        }
     }
+
+    struct PresentPlacement {
+        present_index: usize,
+        variant_index: usize,
+        top_left: Position,
+    }
+
     struct PresentArea {
         y_width: usize,
         x_length: usize,
+        total_cell_count: usize,
         /// the index is equal to the present id
-        required_presents: Vec<usize>,
+        // required_presents: Vec<usize>,
+        remaining_presents: RefCell<Vec<usize>>,
+        placed_presents: RefCell<Vec<PresentPlacement>>,
         /// Y-axis < X-axis >
-        area: Vec<Vec<bool>>,
+        area: RefCell<Vec<Vec<bool>>>,
     }
     impl PresentArea {
         fn new(line: &str) -> Self {
@@ -140,14 +184,18 @@ mod part1 {
             let (y_str, x_str) = dimension_str.split_once("x").expect("valid dimension part");
             let y_width = y_str.parse().expect("valid y");
             let x_length = x_str.parse().expect("valid x");
+            let required_presents: Vec<usize> = present_str
+                .split(" ")
+                .map(|x| x.parse().expect("valid required present"))
+                .collect();
             PresentArea {
+                total_cell_count: x_length * y_width,
                 y_width,
                 x_length,
-                required_presents: present_str
-                    .split(" ")
-                    .map(|x| x.parse().expect("valid required present"))
-                    .collect(),
-                area: vec![vec![false; x_length]; y_width],
+                remaining_presents: required_presents.clone().into(),
+                // required_presents,
+                area: vec![vec![false; x_length]; y_width].into(),
+                placed_presents: vec![].into(),
             }
         }
 
@@ -155,43 +203,189 @@ mod part1 {
             if p.x < 0 || p.y < 0 || p.x >= self.x_length as i32 || p.y >= self.y_width as i32 {
                 return None;
             }
-            Some(self.area[p.y as usize][p.x as usize])
+            Some(self.area.borrow()[p.y as usize][p.x as usize])
         }
 
-        /// position is in top left
-        fn try_place_present(&mut self, p: &Position, present_variant: &[Vec<bool>]) -> bool {
+        /// position is in top left, also updates the placed presents
+        fn try_place_present(
+            &self,
+            p: &Position,
+            present_variant: &[Vec<bool>],
+            present_index: usize,
+            variant_index: usize,
+        ) -> bool {
             let mut to_update: Vec<(usize, usize)> = vec![];
             for y in 0..3 {
                 for x in 0..3 {
-                    if present_variant[y][x]
-                        && let position = p.apply_relative_position(x, y)
-                        && let Some(cell_value) = self.get_value(&position)
-                    {
-                        if cell_value {
+                    if present_variant[y][x] {
+                        let position = p.apply_relative_position(x, y);
+                        let cell_value = self.get_value(&position);
+                        if cell_value.is_none() || cell_value.unwrap() {
                             return false;
-                        } else {
-                            to_update.push((position.x as usize, position.y as usize));
                         }
+                        to_update.push((position.x as usize, position.y as usize));
                     }
                 }
             }
-            to_update.iter().for_each(|(x, y)| self.area[*y][*x] = true);
+            // It is possible to place the present
+            to_update
+                .iter()
+                .for_each(|(x, y)| self.area.borrow_mut()[*y][*x] = true);
+            self.placed_presents.borrow_mut().push(PresentPlacement {
+                present_index,
+                variant_index,
+                top_left: p.clone(),
+            });
+            let updated_remaining = self.remaining_presents.borrow()[present_index] - 1;
+            self.remaining_presents.borrow_mut()[present_index] = updated_remaining;
 
             true
         }
+
+        fn try_fill_position(
+            &self,
+            presents: &[Present],
+            popped_placement: &Option<PresentPlacement>,
+            position: &Position,
+        ) {
+            let present_index_offset: i32 = {
+                if let Some(placement) = &popped_placement {
+                    placement.present_index as i32
+                } else {
+                    -1
+                }
+            };
+            let mut variant_index_offset: i32 = {
+                if let Some(placement) = &popped_placement {
+                    placement.variant_index as i32
+                } else {
+                    -1
+                }
+            };
+            for (present_index, present) in presents
+                .iter()
+                .enumerate()
+                .skip((present_index_offset + 1) as usize)
+            {
+                let remaining_count = self.remaining_presents.borrow()[present_index];
+                if remaining_count == 0 {
+                    continue;
+                }
+
+                for (variant_index, variant) in present
+                    .variants
+                    .iter()
+                    .enumerate()
+                    .skip((variant_index_offset + 1) as usize)
+                {
+                    if self.try_place_present(position, variant, present_index, variant_index) {
+                        // println!(
+                        //     "PLACED present {:?} - {} - {}",
+                        //     position, present_index, variant_index
+                        // );
+                        // variant.print();
+                        // println!("------");
+                        // self.print();
+                        // println!("------");
+                        return;
+                    }
+                }
+                variant_index_offset = 0;
+            }
+        }
+        fn pop_last_placement(&self, presents: &[Present]) -> Option<PresentPlacement> {
+            if let Some(placement) = self.placed_presents.borrow_mut().pop() {
+                self.remove_present(
+                    &placement.top_left,
+                    &presents[placement.present_index].variants[placement.variant_index],
+                );
+                let updated_remaining =
+                    self.remaining_presents.borrow()[placement.present_index] + 1;
+                self.remaining_presents.borrow_mut()[placement.present_index] = updated_remaining;
+                Some(placement)
+            } else {
+                None
+            }
+        }
         /// position is in top left
-        fn remove_present(&mut self, p: &Position, present_variant: &[Vec<bool>]) {
-            for y in 0..3 {
-                for x in 0..3 {
+        fn remove_present(&self, p: &Position, present_variant: &[Vec<bool>]) {
+            (0..3).for_each(|y| {
+                (0..3).for_each(|x| {
                     if present_variant[y][x]
                         && let position = p.apply_relative_position(x, y)
                         && let Some(_) = self.get_value(&position)
                     {
-                        self.area[position.y as usize][position.x as usize] = false;
+                        self.area.borrow_mut()[position.y as usize][position.x as usize] = false;
                     }
+                });
+            });
+        }
+
+        fn has_remaining_presents(&self) -> bool {
+            self.remaining_presents.borrow().iter().any(|v| *v > 0)
+        }
+
+        fn can_fill_remaining_presents(&self, presents: &[Present]) -> bool {
+            let remaining_presents = self.remaining_presents.borrow();
+            let required_cells: usize = presents
+                .iter()
+                .enumerate()
+                .map(|(present_index, present)| {
+                    remaining_presents[present_index] * present.required_cells
+                })
+                .sum();
+            required_cells <= self.total_cell_count
+        }
+
+        fn print(&self) {
+            for area_line in self.area.borrow().iter() {
+                let mut line: String = "".to_string();
+                for v in area_line.iter() {
+                    let char = if *v { '#' } else { '.' };
+                    line = format!("{line}{char}");
                 }
+                println!("{line}");
             }
         }
+    }
+
+    fn can_place_all_presents(present_area: &PresentArea, presents: &[Present]) -> bool {
+        let mut current_position = Some(Position { x: -1, y: -1 });
+        let mut popped_placement: Option<PresentPlacement> = None;
+
+        // if no presents were placed, pop last present and continue iteration
+        // if current iteration does not have enough cells, pop last present and continue iteration
+        // if all placed presents on location fail continue to the next position
+        // let pop_last = || {
+        //     if let Some(popped) = present_area.pop_last_placement(presents) {
+        //         current_position = Some(popped.top_left.clone());
+        //         popped_placement = Some(popped);
+        //     } else {
+        //         popped_placement = None;
+        //     }
+        // };
+        //
+        while current_position.is_some() {
+            let mut position = current_position.clone().unwrap();
+            if !present_area.has_remaining_presents() {
+                return true;
+            }
+            popped_placement = None;
+
+            if !present_area.can_fill_remaining_presents(presents) {
+                // TODO optimize, calculate
+                // based on the current position
+                if let Some(popped) = present_area.pop_last_placement(presents) {
+                    position = popped.top_left.clone();
+                    popped_placement = Some(popped);
+                }
+            }
+
+            present_area.try_fill_position(presents, &popped_placement, &position);
+            current_position = position.next(present_area);
+        }
+
+        false
     }
 
     pub fn execute_part1(input: &str) -> usize {
@@ -207,22 +401,11 @@ mod part1 {
                 cached_lines.push(line);
             }
         }
-        let present_areas = cached_lines
+        cached_lines
             .into_iter()
             .map(PresentArea::new)
-            .collect::<Vec<_>>();
-        assert_eq!(presents.first().unwrap().variants.len(), 8);
-
-        // try fill from top left to bottom right
-        // fill as close as possible to the last placed piece
-        // try all pieces as a first, try as much out of scope as possible
-        // everything is 3x3
-        // start on last placed location
-        // move 3 down
-        // move 1 to the right, and attempt 3 down each time
-        // in theory it should work each time
-        // do this for every available piece
-        0
+            .filter(|x| can_place_all_presents(x, &presents))
+            .count()
     }
 
     #[allow(unused)]
