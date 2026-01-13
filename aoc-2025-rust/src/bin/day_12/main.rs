@@ -3,13 +3,6 @@ const EXAMPLE_INPUT: &str = include_str!("./y2025_day12.example");
 const INPUT: &str = include_str!("./y2025_day12.input");
 
 mod part1 {
-    // each gift can be rotated and flipped in every direction
-    // => 8 versions of each gift
-    // each gift is 3x3
-    // keep track of best score
-    // get an optimistic score?
-    // 2d array
-
     use std::cell::RefCell;
 
     trait Plane<T> {
@@ -337,6 +330,7 @@ mod part1 {
             required_cells <= self.total_cell_count
         }
 
+        #[allow(unused)]
         fn print(&self) {
             for area_line in self.area.borrow().iter() {
                 let mut line: String = "".to_string();
@@ -351,20 +345,8 @@ mod part1 {
 
     fn can_place_all_presents(present_area: &PresentArea, presents: &[Present]) -> bool {
         let mut current_position = Some(Position { x: -1, y: -1 });
-        let mut popped_placement: Option<PresentPlacement> = None;
+        let mut popped_placement: Option<PresentPlacement>;
 
-        // if no presents were placed, pop last present and continue iteration
-        // if current iteration does not have enough cells, pop last present and continue iteration
-        // if all placed presents on location fail continue to the next position
-        // let pop_last = || {
-        //     if let Some(popped) = present_area.pop_last_placement(presents) {
-        //         current_position = Some(popped.top_left.clone());
-        //         popped_placement = Some(popped);
-        //     } else {
-        //         popped_placement = None;
-        //     }
-        // };
-        //
         while current_position.is_some() {
             let mut position = current_position.clone().unwrap();
             if !present_area.has_remaining_presents() {
@@ -407,11 +389,6 @@ mod part1 {
             .filter(|x| can_place_all_presents(x, &presents))
             .count()
     }
-
-    #[allow(unused)]
-    pub fn execute_part2(input: &str) -> usize {
-        0
-    }
 }
 
 #[test]
@@ -427,20 +404,7 @@ fn part1_input() {
     println!("{result}");
 }
 
-#[test]
-fn part2_example() {
-    let result = part1::execute_part2(EXAMPLE_INPUT);
-    println!("{result}");
-}
-#[test]
-fn part2_input() {
-    let result = part1::execute_part2(INPUT);
-    println!("{result}");
-}
-
 fn main() {
     part1::execute_part1(EXAMPLE_INPUT);
     part1::execute_part1(INPUT);
-    let result = part1::execute_part2(INPUT);
-    println!("result {}", result);
 }
